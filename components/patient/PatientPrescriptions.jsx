@@ -16,7 +16,7 @@ import {
   FiFileText,
   FiActivity,
   FiMapPin,
-  FaRupeeSign,
+  // FaRupeeSign,
   FiPackage,
   FiDownload,
   FiClipboard,
@@ -25,6 +25,8 @@ import {
   FiArrowRight,
   FiCheckCircle,
 } from "react-icons/fi";
+import { FaRupeeSign } from "react-icons/fa";
+
 import {
   MdVerifiedUser,
   MdLocalPharmacy,

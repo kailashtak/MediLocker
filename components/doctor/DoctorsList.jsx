@@ -6,7 +6,7 @@ import {
   FiSearch,
   FiFilter,
   FiCalendar,
-  FaRupeeSign,
+  // FaRupeeSign,
   FiUser,
   FiStar,
   FiMapPin,
@@ -21,6 +21,8 @@ import {
   FiMail,
   FiGlobe,
 } from "react-icons/fi";
+import { FaRupeeSign } from "react-icons/fa";
+
 import {
   MdVerifiedUser,
   MdLocalHospital,

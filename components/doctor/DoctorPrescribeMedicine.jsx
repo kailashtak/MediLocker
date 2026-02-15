@@ -20,13 +20,15 @@ import {
   FiPlusCircle,
   FiMinus,
   FiShoppingBag,
-  FaRupeeSign,
+  // FaRupeeSign,
   FiFilter,
   FiArrowRight,
   FiShield,
   FiCheckCircle,
   FiAlertCircle,
 } from "react-icons/fi";
+import { FaRupeeSign } from "react-icons/fa";
+
 import {
   MdLocalHospital,
   MdVerifiedUser,

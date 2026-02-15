@@ -5,7 +5,7 @@ import {
   FiCalendar,
   FiClock,
   FiUser,
-  FaRupeeSign,
+  // FaRupeeSign,
   FiFileText,
   FiCheck,
   FiArrowLeft,
@@ -19,6 +19,8 @@ import {
   FiAward,
   FiShield,
 } from "react-icons/fi";
+import { FaRupeeSign } from "react-icons/fa";
+
 import {
   MdLocalHospital,
   MdVerifiedUser,

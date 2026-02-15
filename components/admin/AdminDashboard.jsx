@@ -8,7 +8,7 @@ import {
   FiTrendingUp,
   FiUserCheck,
   FiUserX,
-  FaRupeeSign,
+  // FaRupeeSign,
   FiSettings,
   FiPlusCircle,
   FiEye,
@@ -23,6 +23,8 @@ import {
   FiServer,
   FiMonitor,
 } from "react-icons/fi";
+import { FaRupeeSign } from "react-icons/fa";
+
 import {
   MdAdminPanelSettings,
   MdSecurity,

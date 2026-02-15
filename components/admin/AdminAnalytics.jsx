@@ -8,7 +8,7 @@ import {
   FiPieChart,
   FiActivity,
   FiUsers,
-  FaRupeeSign,
+  // FaRupeeSign,
   FiCalendar,
   FiArrowLeft,
   FiDownload,
@@ -21,6 +21,9 @@ import {
   FiCheckCircle,
   FiArrowRight,
 } from "react-icons/fi";
+
+import { FaRupeeSign } from "react-icons/fa";
+
 import {
   MdLocalHospital,
   MdMedication,
@@ -34,6 +37,7 @@ import {
   MdMonitorHeart,
   MdAccountBalance,
 } from "react-icons/md";
+
 import {
   FaUserMd,
   FaStethoscope,
