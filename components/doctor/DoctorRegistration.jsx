@@ -149,6 +149,59 @@ const DoctorRegistration = () => {
       return;
     }
 
+    // 🔹 Name validation (letters + spaces, min 3)
+if (!/^[A-Za-z\s]{3,}$/.test(formData.name)) {
+  toast.error("Enter valid full name (only letters, min 3 characters)");
+  return;
+}
+
+// 🔹 Phone validation (Indian mobile)
+const indianMobileRegex = /^[6-9]\d{9}$/;
+if (formData.phone && !indianMobileRegex.test(formData.phone)) {
+  toast.error("Enter valid 10-digit Indian mobile number");
+  return;
+}
+
+// 🔹 Email validation
+if (
+  formData.email &&
+  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+) {
+  toast.error("Enter valid email address");
+  return;
+}
+
+// 🔹 Experience validation (0–60 years)
+if (formData.experience && (formData.experience < 0 || formData.experience > 60)) {
+  toast.error("Enter valid years of experience");
+  return;
+}
+
+// 🔹 Consultation fee validation (must be positive)
+if (formData.consultationFee && formData.consultationFee <= 0) {
+  toast.error("Consultation fee must be greater than 0");
+  return;
+}
+
+// 🔹 License validation (min 5 characters)
+if (formData.licenseNumber.length < 5) {
+  toast.error("Enter valid medical license number");
+  return;
+}
+
+// 🔹 Qualification validation (min 3 chars)
+if (formData.qualification.length < 3) {
+  toast.error("Enter valid medical qualification");
+  return;
+}
+
+// 🔹 Address validation
+if (formData.address && formData.address.length < 5) {
+  toast.error("Enter valid address");
+  return;
+}
+
+
     try {
       setLoading(true);
 
@@ -487,14 +540,31 @@ const DoctorRegistration = () => {
                   placeholder="Dr. Name"
                   className="focus:ring-blue-500 focus:border-blue-500"
                 />
-                <Input
+                {/* <Input
                   label="Phone Number"
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
                   placeholder="+91"
                   className="focus:ring-blue-500 focus:border-blue-500"
-                />
+                /> */}
+
+                <Input
+  label="Phone Number"
+  name="phone"
+  type="tel"
+  inputMode="numeric"
+  maxLength={10}
+  value={formData.phone}
+  onChange={(e) => {
+    const value = e.target.value;
+    if (/^\d*$/.test(value)) {
+      setFormData(prev => ({ ...prev, phone: value }));
+    }
+  }}
+  placeholder="Enter 10-digit mobile number"
+/>
+
                 <Input
                   label="Email Address"
                   name="email"
@@ -559,15 +629,21 @@ const DoctorRegistration = () => {
                   <option value="pulmonology">Pulmonology</option>
                   <option value="other">Other Specialization</option>
                 </Select>
-                <Input
-                  label="Years of Experience"
-                  name="experience"
-                  type="number"
-                  value={formData.experience}
-                  onChange={handleInputChange}
-                  placeholder="10"
-                  className="focus:ring-purple-500 focus:border-purple-500"
-                />
+                      <Input
+                      label="Years of Experience"
+                      name="experience"
+                      type="number"
+                      min="0"
+                      max="60"
+                      value={formData.experience}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value >= 0 && value <= 60) {
+                          setFormData(prev => ({ ...prev, experience: value }));
+                        }
+                      }}
+                    />
+
                 <Input
                   label="Medical License Number"
                   name="licenseNumber"
@@ -577,7 +653,7 @@ const DoctorRegistration = () => {
                   placeholder="MD123456789"
                   className="focus:ring-purple-500 focus:border-purple-500"
                 />
-                <Input
+                {/* <Input
                   label="Consultation Fee (Rs)"
                   name="consultationFee"
                   type="number"
@@ -585,7 +661,23 @@ const DoctorRegistration = () => {
                   onChange={handleInputChange}
                   placeholder="100"
                   className="focus:ring-purple-500 focus:border-purple-500"
-                />
+                /> */}
+
+<Input
+  label="Consultation Fee (Rs)"
+  name="consultationFee"
+  type="number"
+  min="1"
+  value={formData.consultationFee}
+  onChange={(e) => {
+    const value = e.target.value;
+    if (value >= 0) {
+      setFormData(prev => ({ ...prev, consultationFee: value }));
+    }
+  }}
+/>
+
+                
                 <Input
                   label="Medical Qualifications"
                   name="qualification"
@@ -694,13 +786,15 @@ const DoctorRegistration = () => {
           <Button
             type="submit"
             loading={loading}
-            disabled={
-              loading ||
-              !formData.name ||
-              !formData.specialization ||
-              !formData.qualification ||
-              !formData.licenseNumber
-            }
+disabled={
+  loading ||
+  !formData.name ||
+  !formData.specialization ||
+  !formData.qualification ||
+  !formData.licenseNumber ||
+  !/^[A-Za-z\s]{3,}$/.test(formData.name) ||
+  (formData.phone && !/^[6-9]\d{9}$/.test(formData.phone))
+}
             className="px-12 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-lg hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl rounded-xl"
           >
             {loading ? (
