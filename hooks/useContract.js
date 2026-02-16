@@ -1091,6 +1091,23 @@ export const useHealthcareContract = () => {
     });
   };
 
+  // --------------- kailash -----------------
+const uploadMedicalReport = async (patientId, hash, reportType) => {
+  const tx = await contract.UPLOAD_MEDICAL_REPORT(
+    patientId,
+    hash,
+    reportType
+  );
+  await tx.wait();
+};
+
+const getPatientReports = async (patientId) => {
+  return await contract.GET_PATIENT_REPORTS(patientId);
+};
+  
+
+// -----------kailash end1 ------------
+
   return {
     // Loading states
     loading: loading || isPending || isConfirming,
@@ -1147,5 +1164,15 @@ export const useHealthcareContract = () => {
 
     // Hooks for individual reads
     useContractRead,
+   
+    // ------- kailash --------
+    registerDoctor,
+    // addPatient,
+    uploadMedicalReport,
+    getPatientReports,
+
+    // ------- kailash end --------
+  
+  
   };
 };

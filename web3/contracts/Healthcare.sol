@@ -30,6 +30,19 @@ contract Healthcare {
         uint[] boughtMedicines;
     }
 
+    // *************************
+    struct MedicalReport {
+    string ipfsHash;
+    string reportType;
+    uint256 timestamp;
+    }
+
+
+
+
+
+    // **************************
+
     struct Prescription {
         uint id;
         uint medicineId;
@@ -105,6 +118,8 @@ contract Healthcare {
     mapping(uint => Appointment) public appointments;
     mapping(address => bool) public registeredDoctors;
     mapping(address => bool) public registeredPatients;
+    mapping(uint => MedicalReport[]) private patientReports;  //*******************//
+
 
     uint public medicineCount;
     uint public doctorCount;
@@ -402,6 +417,34 @@ contract Healthcare {
         emit MEDICINE_BOUGHT(_patientId, _medicineId);
     }
 
+    // *************************************************
+
+        function UPLOAD_MEDICAL_REPORT(
+        uint _patientId,
+        string memory _ipfsHash,
+        string memory _reportType
+    ) public {
+
+        require(_patientId <= patientCount, "Patient does not exist");
+        require(
+            patients[_patientId].accountAddress == msg.sender,
+            "Only the patient can upload reports"
+        );
+
+        patientReports[_patientId].push(
+            MedicalReport({
+                ipfsHash: _ipfsHash,
+                reportType: _reportType,
+                timestamp: block.timestamp
+            })
+        );
+
+        ADD_NOTIFICATION(msg.sender, "Medical report uploaded successfully", "Patient");
+    }
+    //  ********************************
+
+
+
     //--------------END OF PATIENT------------------
 
 
@@ -549,6 +592,27 @@ contract Healthcare {
         }
         return allAppointments;
     }
+
+    
+// ************************************************
+
+    function GET_PATIENT_REPORTS(uint _patientId)
+    public
+    view
+    returns (MedicalReport[] memory)
+{
+    require(_patientId <= patientCount, "Patient does not exist");
+
+    require(
+        patients[_patientId].accountAddress == msg.sender ||
+        msg.sender == admin ||
+        registeredDoctors[msg.sender],
+        "Not authorized"
+    );
+
+    return patientReports[_patientId];
+}
+// ************************************************
 
     //--------------END OF GET APTIENT------------------
 
@@ -755,4 +819,9 @@ contract Healthcare {
     }
 
      //--------------END OF CHAT------------------
+
+
+
+
+
 }

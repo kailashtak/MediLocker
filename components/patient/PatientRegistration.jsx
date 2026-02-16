@@ -50,6 +50,8 @@ import LoadingSpinner from "../common/LoadingSpinner";
 import { useHealthcareContract } from "../../hooks/useContract";
 import ipfsService from "../../utils/ipfs";
 import toast from "react-hot-toast";
+import { FaFileMedical } from "react-icons/fa";
+
 
 const PatientRegistration = () => {
   const [formData, setFormData] = useState({
@@ -72,6 +74,10 @@ const PatientRegistration = () => {
   const [registrationFee, setRegistrationFee] = useState("0");
   const [availableDoctors, setAvailableDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+// -------- kailash --------
+  const [medicalReports, setMedicalReports] = useState([]);
+const [uploadingReport, setUploadingReport] = useState(false);
+// -------- kailash end --------
 
   const { address, isConnected } = useAccount();
   const router = useRouter();
@@ -112,6 +118,56 @@ const PatientRegistration = () => {
 
     fetchInitialData();
   }, [isConnected, address]);
+
+
+  // -------- kailash --------
+  const handleReportUpload = async (e) => {
+  const files = Array.from(e.target.files);
+
+  if (!files.length) return;
+
+  const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+
+  for (let file of files) {
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only PDF, JPG, PNG files allowed");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be under 5MB");
+      return;
+    }
+  }
+
+  try {
+    setUploadingReport(true);
+
+    const uploadedReports = [];
+
+    for (let file of files) {
+      const result = await ipfsService.uploadToIPFS(file, {
+        name: `report-${Date.now()}`,
+        type: "medical-report",
+      });
+
+      uploadedReports.push({
+        name: file.name,
+        url: result.hash || result.metadataUrl,
+      });
+    }
+
+    setMedicalReports((prev) => [...prev, ...uploadedReports]);
+
+    toast.success("Reports uploaded successfully!");
+  } catch (error) {
+    console.error(error);
+    toast.error("Report upload failed");
+  } finally {
+    setUploadingReport(false);
+  }
+};
+  // -------- kailash end --------
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -213,6 +269,7 @@ if (formData.address && formData.address.length < 5) {
       // Upload profile data to IPFS
       const profileData = {
         ...formData,
+        medicalReports,
         registrationDate: new Date().toISOString(),
         walletAddress: address,
       };
@@ -665,6 +722,81 @@ if (formData.address && formData.address.length < 5) {
             </p>
           </div>
         </Card>
+
+        {/* ---------kailash ---------------- */}
+
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+  <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+    <FaXRay className="h-6 w-6 text-blue-600" />
+    Upload Medical Reports
+  </h2>
+
+  <div className="space-y-6">
+    <div className="bg-gradient-to-r from-blue-100 to-indigo-100 p-4 rounded-xl border border-blue-200">
+      <p className="text-blue-800 flex items-center gap-2">
+        <MdVerifiedUser className="h-5 w-5" />
+        <span className="font-medium">
+          Upload your lab reports, X-rays, prescriptions, scans, or other medical documents.
+        </span>
+      </p>
+    </div>
+
+    <div className="border-2 border-dashed border-blue-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors">
+      <FiUpload className="h-10 w-10 text-blue-500 mx-auto mb-4" />
+      <input
+        type="file"
+        multiple
+        accept=".pdf,.jpg,.jpeg,.png"
+        onChange={handleReportUpload}
+        className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <p className="text-sm text-gray-500 mt-3">
+        Allowed formats: PDF, JPG, PNG (Max 5MB each)
+      </p>
+    </div>
+
+    {uploadingReport && (
+      <div className="flex items-center justify-center">
+        <LoadingSpinner size="small" />
+        <span className="ml-3 text-blue-600 font-medium">
+          Uploading reports...
+        </span>
+      </div>
+    )}
+
+    {medicalReports.length > 0 && (
+      <div className="space-y-3">
+        <h3 className="font-semibold text-gray-800">
+          Uploaded Reports:
+        </h3>
+
+        {medicalReports.map((report, index) => (
+          <div
+            key={index}
+            className="flex items-center justify-between bg-white p-3 rounded-lg border border-blue-200"
+          >
+            <div className="flex items-center gap-2">
+              <FaFileMedical className="h-4 w-4 text-blue-500" />
+              <span className="text-sm font-medium">
+                {report.name}
+              </span>
+            </div>
+
+            <a
+              href={`https://ipfs.io/ipfs/${report.url}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 text-sm font-medium hover:underline"
+            >
+              View
+            </a>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</Card>
+{/* ------------kailash end------------- */}
 
         {/* Enhanced Preferred Doctor Selection */}
         <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 border-2 border-teal-200">
