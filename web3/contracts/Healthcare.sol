@@ -119,6 +119,7 @@ contract Healthcare {
     mapping(address => bool) public registeredDoctors;
     mapping(address => bool) public registeredPatients;
     mapping(uint => MedicalReport[]) private patientReports;  //*******************//
+    mapping(uint => mapping(address => bool)) private reportAccess;
 
 
     uint public medicineCount;
@@ -419,28 +420,49 @@ contract Healthcare {
 
     // *************************************************
 
-        function UPLOAD_MEDICAL_REPORT(
-        uint _patientId,
-        string memory _ipfsHash,
-        string memory _reportType
-    ) public {
+function UPLOAD_MEDICAL_REPORT(
+    uint _patientId,
+    string memory _ipfsHash,
+    string memory _reportType
+) public {
 
-        require(_patientId <= patientCount, "Patient does not exist");
-        require(
-            patients[_patientId].accountAddress == msg.sender,
-            "Only the patient can upload reports"
-        );
+    require(_patientId <= patientCount, "Patient does not exist");
+    require(
+        patients[_patientId].accountAddress == msg.sender,
+        "Only the patient can upload reports"
+    );
 
-        patientReports[_patientId].push(
-            MedicalReport({
-                ipfsHash: _ipfsHash,
-                reportType: _reportType,
-                timestamp: block.timestamp
-            })
-        );
+    patientReports[_patientId].push(
+        MedicalReport({
+            ipfsHash: _ipfsHash,
+            reportType: _reportType,
+            timestamp: block.timestamp
+        })
+    );
 
-        ADD_NOTIFICATION(msg.sender, "Medical report uploaded successfully", "Patient");
-    }
+    ADD_NOTIFICATION(msg.sender, "Medical report uploaded successfully", "Patient");
+}
+
+
+
+function SHARE_REPORT_WITH_DOCTOR(
+    uint _patientId,
+    address _doctorAddress
+) public {
+
+    require(_patientId <= patientCount, "Patient does not exist");
+    require(
+        patients[_patientId].accountAddress == msg.sender,
+        "Only patient can share reports"
+    );
+    require(registeredDoctors[_doctorAddress], "Doctor not registered");
+
+    reportAccess[_patientId][_doctorAddress] = true;
+
+    ADD_NOTIFICATION(_doctorAddress, "Patient shared medical reports with you", "Patient");
+}
+
+
     //  ********************************
 
 
@@ -606,7 +628,8 @@ contract Healthcare {
     require(
         patients[_patientId].accountAddress == msg.sender ||
         msg.sender == admin ||
-        registeredDoctors[msg.sender],
+        reportAccess[_patientId][msg.sender],
+
         "Not authorized"
     );
 

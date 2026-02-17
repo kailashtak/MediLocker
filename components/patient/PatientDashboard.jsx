@@ -53,6 +53,8 @@ import { Card, Badge, Button } from "../common";
 import LoadingSpinner from "../common/LoadingSpinner";
 import { useHealthcareContract } from "../../hooks/useContract";
 import { useRouter } from "next/router";
+import { FaFileMedical } from "react-icons/fa";
+
 
 const PatientDashboard = () => {
   const [patientData, setPatientData] = useState(null);
@@ -370,7 +372,8 @@ const PatientDashboard = () => {
           <MdMedicalServices className="h-6 w-6 text-blue-600" />
           Quick Medical Actions
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+
           <Button
             onClick={() => router.push("/patient/appointment")}
             className="flex items-center justify-center space-x-3 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white transform hover:scale-105 transition-all duration-200 rounded-xl shadow-lg"
@@ -392,6 +395,16 @@ const PatientDashboard = () => {
             <FaNotesMedical className="h-6 w-6" />
             <span className="font-semibold">View Medical History</span>
           </Button>
+            
+            <Button
+            onClick={() => router.push("/patient/upload-report")}
+            className="flex items-center justify-center space-x-3 h-16 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white transform hover:scale-105 transition-all duration-200 rounded-xl shadow-lg"
+          >
+            <FaFileMedical className="h-6 w-6" />
+            <span className="font-semibold">Upload Report</span>
+          </Button>
+
+          
         </div>
       </Card>
 

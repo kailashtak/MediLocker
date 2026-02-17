@@ -1091,22 +1091,91 @@ export const useHealthcareContract = () => {
     });
   };
 
-  // --------------- kailash -----------------
-const uploadMedicalReport = async (patientId, hash, reportType) => {
-  const tx = await contract.UPLOAD_MEDICAL_REPORT(
-    patientId,
-    hash,
-    reportType
-  );
-  await tx.wait();
-};
+// =====================
+// Medical Report Functions
+// =====================
 
-const getPatientReports = async (patientId) => {
-  return await contract.GET_PATIENT_REPORTS(patientId);
-};
-  
+const uploadMedicalReport = useCallback(
+  async (patientId, ipfsHash, reportType) => {
+    if (!isConnected) {
+      toast.error("Please connect your wallet");
+      return;
+    }
 
-// -----------kailash end1 ------------
+    try {
+      setLoading(true);
+
+      const result = await writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: "UPLOAD_MEDICAL_REPORT",
+        args: [patientId, ipfsHash, reportType],
+      });
+
+      toast.success("Medical report uploaded successfully!");
+      return result;
+    } catch (error) {
+      console.error("Error uploading report:", error);
+      toast.error("Failed to upload medical report");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  },
+  [writeContract, isConnected]
+);
+
+const getPatientReports = useCallback(
+  async (patientId) => {
+    try {
+      if (!publicClient) return [];
+
+      const data = await publicClient.readContract({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: "GET_PATIENT_REPORTS",
+        args: [patientId],
+      });
+
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      return [];
+    }
+  },
+  [publicClient]
+);
+
+const shareReportWithDoctor = useCallback(
+  async (patientId, doctorAddress) => {
+    if (!isConnected) {
+      toast.error("Please connect your wallet");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const result = await writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: "SHARE_REPORT_WITH_DOCTOR",
+        args: [patientId, doctorAddress],
+      });
+
+      toast.success("Report shared with doctor successfully!");
+      return result;
+    } catch (error) {
+      console.error("Error sharing report:", error);
+      toast.error("Failed to share report");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  },
+  [writeContract, isConnected]
+);
+
 
   return {
     // Loading states
@@ -1166,10 +1235,9 @@ const getPatientReports = async (patientId) => {
     useContractRead,
    
     // ------- kailash --------
-    registerDoctor,
-    // addPatient,
-    uploadMedicalReport,
-    getPatientReports,
+  uploadMedicalReport,
+getPatientReports,
+shareReportWithDoctor,
 
     // ------- kailash end --------
   
