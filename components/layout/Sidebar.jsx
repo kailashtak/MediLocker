@@ -200,6 +200,13 @@ const Sidebar = ({ isOpen, onClose, userType }) => {
         color: "blue",
       },
       {
+        name: "Upload Reports",
+        href: "/patient/upload-report",
+        icon: FaFileMedical,
+        color: "purple",
+      },
+
+      {
         name: "My Prescriptions",
         href: "/patient/prescriptions",
         icon: FaSyringe,
