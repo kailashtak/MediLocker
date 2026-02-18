@@ -41,6 +41,8 @@ import {
   FaSyringe,
   FaUserNurse,
   FaMicroscope,
+  FaFileMedical,
+
 } from "react-icons/fa";
 
 const Sidebar = ({ isOpen, onClose, userType }) => {
