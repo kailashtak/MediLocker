@@ -1700,6 +1700,24 @@ export const CONTRACT_ABI = [
     {
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "_patientId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_doctorAddress",
+          "type": "address"
+        }
+      ],
+      "name": "SHARE_REPORT_WITH_DOCTOR",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "address payable",
           "name": "_newAddress",
           "type": "address"
