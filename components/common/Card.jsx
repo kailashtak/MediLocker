@@ -1,4 +1,9 @@
-export const Card = ({ children, className = "", padding = "default" }) => {
+export const Card = ({
+  children,
+  className = "",
+  padding = "default",
+  onClick,
+}) => {
   const paddingClasses = {
     none: "",
     small: "p-4",
@@ -8,6 +13,7 @@ export const Card = ({ children, className = "", padding = "default" }) => {
 
   return (
     <div
+      onClick={onClick}
       className={`bg-white rounded-lg shadow-sm border border-gray-200 ${paddingClasses[padding]} ${className}`}
     >
       {children}
