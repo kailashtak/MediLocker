@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
+
 import {
   FiCalendar,
   FiShoppingBag,
@@ -53,7 +54,7 @@ import { Card, Badge, Button } from "../common";
 import LoadingSpinner from "../common/LoadingSpinner";
 import { useHealthcareContract } from "../../hooks/useContract";
 import { useRouter } from "next/router";
-
+import UploadReport from "./UploadReport";
 const PatientDashboard = () => {
   const [patientData, setPatientData] = useState(null);
   const [appointments, setAppointments] = useState([]);
@@ -392,7 +393,14 @@ const PatientDashboard = () => {
             <FaNotesMedical className="h-6 w-6" />
             <span className="font-semibold">View Medical History</span>
           </Button>
+
+         
         </div>
+
+                 {/* 🔥 ADD HERE */}
+          <div className="mt-4">
+            <UploadReport />
+          </div>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

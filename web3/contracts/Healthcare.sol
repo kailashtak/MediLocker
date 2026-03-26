@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+interface IMedicalReports {
+    function setPatientOwner(uint, address) external;
+}
+
+
+
 contract Healthcare {
+
+address public reportsContract;
 
     struct Medicine {
         uint id;
@@ -156,6 +164,10 @@ contract Healthcare {
     constructor() {
         admin = payable(msg.sender);
     }
+
+    function setReportsContract(address _addr) public onlyAdmin {
+    reportsContract = _addr;
+}
 
     //NOTIFICATIOn
     function ADD_NOTIFICATION(address _userAddress, string memory _message, string memory _type) internal {
@@ -325,7 +337,14 @@ contract Healthcare {
 
             patientCount++;
             patients[patientCount] = Patient(patientCount, _IPFS_URL, _medicalHistory, _accountAddress, _boughtMedicines);
+            
             registeredPatients[_accountAddress] = true;
+            
+            IMedicalReports(reportsContract).setPatientOwner(
+            patientCount,
+            _accountAddress
+               );
+            
 
             payable(admin).transfer(msg.value);
 
