@@ -20,4 +20,5 @@ export const config = getDefaultConfig({
   projectId: PROJECT_ID,
   chains: [localhost], // ✅ ONLY localhost
   ssr: true,
+  // ssr: false
 });

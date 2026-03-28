@@ -53,7 +53,9 @@ import { Card, Badge, Button } from "../common";
 import LoadingSpinner from "../common/LoadingSpinner";
 import { useHealthcareContract } from "../../hooks/useContract";
 import { useRouter } from "next/router";
-
+import { useWriteContract } from "wagmi";
+import { useReadContract } from "wagmi";
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../../config/contract";
 const PatientDashboard = () => {
   const [patientData, setPatientData] = useState(null);
   const [appointments, setAppointments] = useState([]);
@@ -68,7 +70,24 @@ const PatientDashboard = () => {
   });
 
   const { address, isConnected } = useAccount();
+  const { writeContractAsync } = useWriteContract();
+
+  const [newRecord, setNewRecord] = useState("");
   const router = useRouter();
+
+//   const { data: records } = useReadContract({
+//   address: CONTRACT_ADDRESS,
+//   abi: CONTRACT_ABI,
+//   functionName: "patientRecords",
+//   args: [Number(patientData?.id || 0), 0],
+// });
+
+const { data: records } = useReadContract({
+  address: CONTRACT_ADDRESS,
+  abi: CONTRACT_ABI,
+  functionName: "GET_PATIENT_RECORDS",
+  args: [Number(patientData?.id || 0)],
+});
   const {
     getPatientId,
     getPatientDetails,
@@ -137,6 +156,82 @@ const PatientDashboard = () => {
     const timeInMs = Number(timestamp) * 1000;
     return new Date(timeInMs).toLocaleDateString();
   };
+
+//   const addMedicalRecord = async () => {
+//   try {
+//     if (!patientData?.id) {
+//       alert("Patient not found");
+//       return;
+//     }
+
+//     const tx = await writeContractAsync({
+//       address: CONTRACT_ADDRESS,
+//       abi: CONTRACT_ABI,
+//       functionName: "ADD_MEDICAL_RECORD",
+//       args: [Number(patientData.id), newRecord],
+//     });
+
+//     console.log("TX:", tx);
+//     alert("Record added successfully!");
+//     window.location.reload();
+//     setNewRecord("");
+//   } catch (error) {
+//     console.error(error);
+//     alert("Error adding record");
+//   }
+// };
+
+const addMedicalRecord = async () => {
+  try {
+    if (!patientData?.id) {
+      alert("Patient not found");
+      return;
+    }
+
+    if (!newRecord) {
+      alert("Please select a file");
+      return;
+    }
+
+    // 🔥 Upload to IPFS (Pinata)
+    const formData = new FormData();
+    formData.append("file", newRecord);
+
+    const res = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_PINATA_JWT}`,
+      },
+      body: formData,
+    });
+
+    const data = await res.json();
+    const fileHash = data.IpfsHash;
+
+    console.log("IPFS HASH:", fileHash);
+
+    // 🔥 Send to blockchain
+    const tx = await writeContractAsync({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: "ADD_MEDICAL_RECORD",
+      args: [
+        Number(patientData.id),
+        fileHash,
+        newRecord.name,
+        "General Report",
+      ],
+    });
+
+    console.log("TX:", tx);
+    alert("Record uploaded successfully!");
+
+    window.location.reload();
+  } catch (error) {
+    console.error(error);
+    alert("Error uploading record");
+  }
+};
 
   const getAppointmentStatus = (appointment) => {
     if (appointment.isOpen) {
@@ -217,9 +312,10 @@ const PatientDashboard = () => {
   }
 
   return (
-    <div className="space-y-8 relative">
+    <div className="space-y-8 relative z-10">
       {/* Medical Background Elements */}
-      <div className="absolute inset-0 opacity-5 overflow-hidden">
+      {/* <div className="absolute inset-0 opacity-5 overflow-hidden"> */}
+      <div className="absolute inset-0 opacity-5 overflow-hidden pointer-events-none z-0">
         <FaHeartbeat className="absolute top-20 right-20 h-32 w-32 text-blue-600 animate-pulse" />
         <FaStethoscope className="absolute bottom-20 left-20 h-24 w-24 text-emerald-600" />
         <MdLocalHospital className="absolute top-1/2 left-1/4 h-28 w-28 text-indigo-600 animate-pulse animation-delay-2000" />
@@ -512,6 +608,34 @@ const PatientDashboard = () => {
         </Card>
       </div>
 
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+  <h2 className="text-xl font-bold text-gray-900 mb-4">
+    Add Medical Record
+  </h2>
+
+  <div className="flex flex-col md:flex-row gap-4">
+    {/* <input
+      type="text"
+      // placeholder="Enter IPFS hash or record"
+      value={newRecord}
+      onChange={(e) => setNewRecord(e.target.value)}
+      className="flex-1 p-3 border rounded-lg"
+    /> */}
+    <input
+  type="file"
+  onChange={(e) => setNewRecord(e.target.files[0])}
+  className="flex-1 p-3 border rounded-lg"
+/>
+
+    <Button
+      onClick={addMedicalRecord}
+      className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+    >
+      Add Record
+    </Button>
+  </div>
+</Card>
+
       {/* Enhanced Medical History Summary */}
       <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200">
         <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -519,9 +643,13 @@ const PatientDashboard = () => {
           Medical History Overview
         </h2>
         <div className="space-y-4">
+{/*           
           {patientData.medicalHistory &&
           patientData.medicalHistory.length > 0 ? (
-            patientData.medicalHistory.slice(0, 3).map((record, index) => (
+            patientData.medicalHistory.slice(0, 3).map((record, index) => ( */}
+
+            {records && records.length > 0 ? (
+  records.map((record, index) => (
               <div
                 key={index}
                 className="p-4 bg-white rounded-xl border border-emerald-200 shadow-sm"
@@ -530,7 +658,20 @@ const PatientDashboard = () => {
                   <div className="p-2 bg-emerald-100 rounded-lg">
                     <MdOutlineHealthAndSafety className="h-4 w-4 text-emerald-600" />
                   </div>
-                  <p className="text-gray-800 flex-1">{record}</p>
+                  {/* <p className="text-gray-800 flex-1">{record}</p> */}
+                  <div className="flex flex-col">
+  <p className="font-semibold text-gray-900">{record.fileName}</p>
+  <p className="text-sm text-gray-500">{record.fileType}</p>
+
+  <a
+    href={`${process.env.NEXT_PUBLIC_PINATA_GATEWAY}/ipfs/${record.fileHash}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-blue-600 underline text-sm"
+  >
+    View Report
+  </a>
+</div>
                 </div>
               </div>
             ))

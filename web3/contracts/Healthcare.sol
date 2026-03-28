@@ -21,7 +21,12 @@ contract Healthcare {
         uint successfulTreatmentCount;
         bool isApproved;
     }
-
+struct MedicalRecord {
+    string fileHash;   // IPFS hash
+    string fileName;   // e.g. "xray.pdf"
+    string fileType;   // e.g. "X-Ray", "Blood Report"
+    uint timestamp;
+}
     struct Patient {
         uint id;
         string IPFS_URL; 
@@ -101,10 +106,12 @@ contract Healthcare {
     mapping(uint => Medicine) public medicines;
     mapping(uint => Doctor) public doctors;
     mapping(uint => Patient) public patients;
+    mapping(uint => mapping(address => bool)) public patientAccess;
     mapping(uint => Prescription) public prescriptions;
     mapping(uint => Appointment) public appointments;
     mapping(address => bool) public registeredDoctors;
     mapping(address => bool) public registeredPatients;
+    mapping(uint => MedicalRecord[]) public patientRecords;
 
     uint public medicineCount;
     uint public doctorCount;
@@ -286,6 +293,25 @@ contract Healthcare {
             ADD_NOTIFICATION(msg.sender, "Patient medicial history is updated", "Doctor");
     }
 
+ function ADD_MEDICAL_RECORD(
+    uint _patientId,
+    string memory _fileHash,
+    string memory _fileName,
+    string memory _fileType
+) public {
+    require(_patientId <= patientCount, "Patient does not exist");
+    require(patients[_patientId].accountAddress == msg.sender, "Only patient can add records");
+
+    patientRecords[_patientId].push(
+        MedicalRecord({
+            fileHash: _fileHash,
+            fileName: _fileName,
+            fileType: _fileType,
+            timestamp: block.timestamp
+        })
+    );
+}
+
     function COMPLETE_APPOINTMENT(uint _appointmentId) public onlyDoctor {
         require(_appointmentId <= appointmentCount, "Appointment does not exist");
         require(appointments[_appointmentId].doctorId == GET_DOCTOR_ID(msg.sender), "Only the assigned doctor can complete the appointment");
@@ -341,6 +367,19 @@ contract Healthcare {
 
             emit PATIENT_ADDED(patientCount, _IPFS_URL, _medicalHistory);
     }
+    function GRANT_ACCESS(uint _patientId, address _doctor) public {
+    require(_patientId <= patientCount, "Patient does not exist");
+    require(patients[_patientId].accountAddress == msg.sender, "Only patient can grant access");
+
+    patientAccess[_patientId][_doctor] = true;
+}
+
+function REVOKE_ACCESS(uint _patientId, address _doctor) public {
+    require(_patientId <= patientCount, "Patient does not exist");
+    require(patients[_patientId].accountAddress == msg.sender, "Only patient can revoke access");
+
+    patientAccess[_patientId][_doctor] = false;
+}
 
     /// BOOK_APPOINTMENT
     function BOOK_APPOINTMENT(uint _patientId, uint _doctorId, string memory _from,string memory _to,string memory _appointmentDate,string memory _condition, string memory _message, address _doctorAddress, string calldata _name) public payable {
@@ -355,7 +394,7 @@ contract Healthcare {
 
             appointmentCount++;
             appointments[appointmentCount] = Appointment(appointmentCount, _patientId, _doctorId, block.timestamp, _from,_to, _appointmentDate, _condition, _message, true);
-
+            patientAccess[_patientId][doctors[_doctorId].accountAddress] = true;
             doctors[_doctorId].appointmentCount++;
             
             payable(admin).transfer(adminShare);
@@ -438,6 +477,18 @@ contract Healthcare {
     
     //--------------GET APTIENT------------------
 
+    function GET_PATIENT_RECORDS(uint _patientId) public view returns (MedicalRecord[] memory) {
+    require(_patientId <= patientCount, "Patient does not exist");
+    require(
+        patients[_patientId].accountAddress == msg.sender ||
+        patientAccess[_patientId][msg.sender] == true ||
+        msg.sender == admin,
+        "Access denied"
+    );
+
+    return patientRecords[_patientId];
+}
+
     function GET_ALL_PATIENT_ORDERS(uint patientId) public view returns (Order[] memory) {
         require(patientId <= patientCount, "Patient does not exist");
         return patientOrders[patientId];
@@ -504,11 +555,16 @@ contract Healthcare {
         return appointments[_appointmentId];
     }
 
-    function GET_PATIENT_MEDICIAL_HISTORY(uint _patientId) public view returns (string[] memory) {
-        require(_patientId <= patientCount, "Patient does not exist");
-        require(patients[_patientId].accountAddress == msg.sender || msg.sender == admin, "Only the patient or admin can view the medical history");
-        return patients[_patientId].medicalHistory;
-    }
+function GET_PATIENT_MEDICIAL_HISTORY(uint _patientId) public view returns (string[] memory) {
+    require(_patientId <= patientCount, "Patient does not exist");
+    require(
+        patients[_patientId].accountAddress == msg.sender ||
+        patientAccess[_patientId][msg.sender] == true ||
+        msg.sender == admin,
+        "Access denied"
+    );
+    return patients[_patientId].medicalHistory;
+}
 
     function GET_PATIENT_APPOINTMENT_HISTORYS(uint _patientId) public view returns (Appointment[] memory) {
         require(_patientId <= patientCount, "Patient does not exist");

@@ -338,6 +338,34 @@ export const CONTRACT_ABI = [
     {
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "_patientId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_fileHash",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_fileName",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_fileType",
+          "type": "string"
+        }
+      ],
+      "name": "ADD_MEDICAL_RECORD",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "string",
           "name": "_IPFS_URL",
           "type": "string"
@@ -1512,6 +1540,47 @@ export const CONTRACT_ABI = [
       "inputs": [
         {
           "internalType": "uint256",
+          "name": "_patientId",
+          "type": "uint256"
+        }
+      ],
+      "name": "GET_PATIENT_RECORDS",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "fileHash",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "fileName",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "fileType",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct Healthcare.MedicalRecord[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
           "name": "_prescriptionId",
           "type": "uint256"
         }
@@ -1647,6 +1716,24 @@ export const CONTRACT_ABI = [
       "inputs": [
         {
           "internalType": "uint256",
+          "name": "_patientId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_doctor",
+          "type": "address"
+        }
+      ],
+      "name": "GRANT_ACCESS",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
           "name": "_medicineId",
           "type": "uint256"
         },
@@ -1657,6 +1744,24 @@ export const CONTRACT_ABI = [
         }
       ],
       "name": "PRESCRIBE_MEDICINE",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_patientId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_doctor",
+          "type": "address"
+        }
+      ],
+      "name": "REVOKE_ACCESS",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -2062,6 +2167,30 @@ export const CONTRACT_ABI = [
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "patientAccess",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "patientCount",
       "outputs": [
@@ -2117,6 +2246,45 @@ export const CONTRACT_ABI = [
         {
           "internalType": "uint256",
           "name": "date",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "patientRecords",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "fileHash",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "fileName",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "fileType",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
           "type": "uint256"
         }
       ],
