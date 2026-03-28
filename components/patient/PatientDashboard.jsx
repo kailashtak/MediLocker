@@ -56,6 +56,7 @@ import { useRouter } from "next/router";
 import { useWriteContract } from "wagmi";
 import { useReadContract } from "wagmi";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../../config/contract";
+import { usePublicClient } from "wagmi";
 // import { useHealthcareContract } from "../../hooks/useContract";
 const PatientDashboard = () => {
   const [patientData, setPatientData] = useState(null);
@@ -76,8 +77,10 @@ const PatientDashboard = () => {
   const [newRecord, setNewRecord] = useState(null);
   
   const router = useRouter();
+  const publicClient = usePublicClient();
 
 const [doctors, setDoctors] = useState([]);
+const [doctorNames, setDoctorNames] = useState({});
 
  
 
@@ -122,11 +125,21 @@ const { data: records } = useReadContract({
           return;
         }
 
-
-        const doctorsList = await getAllApprovedDoctors();
+const doctorsList = await getAllApprovedDoctors();
 setDoctors(doctorsList || []);
 
+// 🔥 Fetch names
+const namesMap = {};
+
+for (let doc of doctorsList) {
+  const name = await getDoctorName(doc.accountAddress);
+  namesMap[doc.accountAddress] = name;
+}
+
+setDoctorNames(namesMap);
+
 console.log("Doctors:", doctorsList);
+console.log("Doctor Names:", namesMap);
 
         // Fetch all patient data
         const [
@@ -195,6 +208,23 @@ console.log("Doctors:", doctorsList);
 //   }
 // };
 
+
+
+const getDoctorName = async (address) => {
+  try {
+    const res = await publicClient.readContract({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: "GET_USERNAME_TYPE",
+      args: [address],
+    });
+
+    return res.name;
+  } catch (error) {
+    console.error(error);
+    return address; // fallback
+  }
+};
 const addMedicalRecord = async () => {
   try {
     if (!patientData?.id) {
@@ -770,7 +800,9 @@ const revokeAccess = async (doctorAddress) => {
         key={index}
         className="flex justify-between items-center p-3 border rounded-lg mb-2"
       >
-        <span>{doc.accountAddress}</span>
+        <span>
+  {doctorNames[doc.accountAddress] || doc.accountAddress}
+</span>
 
         <div className="flex gap-2">
           <button
