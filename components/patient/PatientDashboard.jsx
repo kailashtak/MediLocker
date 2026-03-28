@@ -56,6 +56,7 @@ import { useRouter } from "next/router";
 import { useWriteContract } from "wagmi";
 import { useReadContract } from "wagmi";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../../config/contract";
+// import { useHealthcareContract } from "../../hooks/useContract";
 const PatientDashboard = () => {
   const [patientData, setPatientData] = useState(null);
   const [appointments, setAppointments] = useState([]);
@@ -72,8 +73,13 @@ const PatientDashboard = () => {
   const { address, isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
 
-  const [newRecord, setNewRecord] = useState("");
+  const [newRecord, setNewRecord] = useState(null);
+  
   const router = useRouter();
+
+const [doctors, setDoctors] = useState([]);
+
+ 
 
 //   const { data: records } = useReadContract({
 //   address: CONTRACT_ADDRESS,
@@ -107,12 +113,20 @@ const { data: records } = useReadContract({
       try {
         setLoading(true);
 
+        
+
         // Get patient ID
         const patientId = await getPatientId(address);
         if (!patientId) {
           setLoading(false);
           return;
         }
+
+
+        const doctorsList = await getAllApprovedDoctors();
+setDoctors(doctorsList || []);
+
+console.log("Doctors:", doctorsList);
 
         // Fetch all patient data
         const [
@@ -219,12 +233,13 @@ const addMedicalRecord = async () => {
         Number(patientData.id),
         fileHash,
         newRecord.name,
-        "General Report",
+        newRecord.type || "Medical Report",
       ],
     });
 
     console.log("TX:", tx);
     alert("Record uploaded successfully!");
+    setNewRecord(null);
 
     window.location.reload();
   } catch (error) {
@@ -232,6 +247,39 @@ const addMedicalRecord = async () => {
     alert("Error uploading record");
   }
 };
+
+const grantAccess = async (doctorAddress) => {
+  try {
+    const tx = await writeContractAsync({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: "GRANT_ACCESS",
+      args: [Number(patientData.id), doctorAddress],
+    });
+
+    alert("Access granted!");
+  } catch (error) {
+    console.error(error);
+    alert("Error granting access");
+  }
+};
+
+const revokeAccess = async (doctorAddress) => {
+  try {
+    const tx = await writeContractAsync({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: "REVOKE_ACCESS",
+      args: [Number(patientData.id), doctorAddress],
+    });
+
+    alert("Access revoked!");
+  } catch (error) {
+    console.error(error);
+    alert("Error revoking access");
+  }
+};
+
 
   const getAppointmentStatus = (appointment) => {
     if (appointment.isOpen) {
@@ -708,6 +756,44 @@ const addMedicalRecord = async () => {
             )}
         </div>
       </Card>
+
+{/* Manage Doctor Access */}
+
+<Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200">
+  <h2 className="text-xl font-bold text-gray-900 mb-4">
+    Manage Doctor Access
+  </h2>
+
+  {doctors && doctors.length > 0 ? (
+    doctors.map((doc, index) => (
+      <div
+        key={index}
+        className="flex justify-between items-center p-3 border rounded-lg mb-2"
+      >
+        <span>{doc.accountAddress}</span>
+
+        <div className="flex gap-2">
+          <button
+  onClick={() => grantAccess(doc.accountAddress)}
+  className="bg-green-500 text-white px-3 py-1 rounded"
+>
+  Grant
+</button>
+
+          <button
+  onClick={() => revokeAccess(doc.accountAddress)}
+  className="bg-red-500 text-white px-3 py-1 rounded"
+>
+  Revoke
+</button>
+        </div>
+      </div>
+    ))
+  ) : (
+    <p>No doctors found</p>
+  )}
+</Card>
+
 
       {/* Enhanced Recent Orders */}
       <Card className="bg-gradient-to-br from-orange-50 to-yellow-50 border-2 border-orange-200">
