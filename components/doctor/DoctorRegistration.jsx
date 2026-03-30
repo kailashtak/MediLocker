@@ -65,7 +65,9 @@ const DoctorRegistration = () => {
     email: "",
     hospitalAffiliation: "",
     consultationFee: "",
-    availableHours: "",
+    availableStart: "",
+availableEnd: "",
+availableDays: [],
     languages: "",
     about: "",
     address: "",
@@ -220,6 +222,7 @@ if (formData.address && formData.address.length < 5) {
       // Upload profile data to IPFS
       const profileData = {
         ...formData,
+        availableHours: formattedAvailability,
         certificates: certificateHashes,
         registrationDate: new Date().toISOString(),
         walletAddress: address,
@@ -695,14 +698,64 @@ if (formData.address && formData.address.length < 5) {
                   placeholder="City General Hospital"
                   className="md:col-span-2 focus:ring-purple-500 focus:border-purple-500"
                 />
-                <Input
+                {/* <Input
                   label="Available Hours"
                   name="availableHours"
                   value={formData.availableHours}
                   onChange={handleInputChange}
                   placeholder="9:00 AM - 5:00 PM (Mon-Fri)"
                   className="md:col-span-2 focus:ring-purple-500 focus:border-purple-500"
-                />
+                /> */}
+
+                <div className="md:col-span-2">
+  <label className="block font-medium mb-2 text-gray-700">
+    Available Hours
+  </label>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    <Input
+      label="Start Time"
+      type="time"
+      name="availableStart"
+      value={formData.availableStart}
+      onChange={handleInputChange}
+    />
+
+    <Input
+      label="End Time"
+      type="time"
+      name="availableEnd"
+      value={formData.availableEnd}
+      onChange={handleInputChange}
+    />
+  </div>
+
+  {/* Days Selection */}
+  <div>
+    <label className="block text-sm font-medium text-gray-600 mb-2">
+      Select Available Days
+    </label>
+    <div className="flex flex-wrap gap-3">
+      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+        <label key={day} className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={formData.availableDays.includes(day)}
+            onChange={() => {
+              setFormData((prev) => ({
+                ...prev,
+                availableDays: prev.availableDays.includes(day)
+                  ? prev.availableDays.filter((d) => d !== day)
+                  : [...prev.availableDays, day],
+              }));
+            }}
+          />
+          <span>{day}</span>
+        </label>
+      ))}
+    </div>
+  </div>
+</div>
               </div>
             </Card>
 
