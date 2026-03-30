@@ -66,8 +66,13 @@ const DoctorRegistration = () => {
     hospitalAffiliation: "",
     consultationFee: "",
     availableStart: "",
-availableEnd: "",
-availableDays: [],
+    availableEnd: "",
+    eveningStart: "",     // 👈 ADD
+eveningEnd: "",  
+    availableDays: [],
+    morningDuration: "15",
+eveningDuration: "15",
+      generatedSlots: [],
     languages: "",
     about: "",
     address: "",
@@ -132,6 +137,68 @@ availableDays: [],
     const files = Array.from(e.target.files);
     setCertificateFiles(files);
   };
+
+  
+
+const generateTimeSlots = () => {
+ const {
+  availableStart,
+  availableEnd,
+  eveningStart,
+  eveningEnd,
+  morningDuration,
+  eveningDuration,
+} = formData;
+
+  const allSlots = [];
+
+  const generateSlots = (startTime, endTime, duration) => {
+    if (!startTime || !endTime) return [];
+
+    const start = new Date(`1970-01-01T${startTime}`);
+    const end = new Date(`1970-01-01T${endTime}`);
+
+    if (start >= end) return [];
+
+    const slots = [];
+    let current = new Date(start);
+
+    while (current < end) {
+      let next = new Date(current);
+    next.setMinutes(next.getMinutes() + parseInt(duration));
+
+      if (next > end) break;
+
+      const format = (date) =>
+        date.toTimeString().slice(0, 5);
+
+      slots.push({
+  time: `${format(current)} - ${format(next)}`,
+});
+      current = next;
+    }
+
+    return slots;
+  };
+
+const morningSlots = generateSlots(
+  availableStart,
+  availableEnd,
+  morningDuration
+);
+
+const eveningSlots = generateSlots(
+  eveningStart,
+  eveningEnd,
+  eveningDuration
+);
+
+  return [
+  ...morningSlots.map((s) => ({ ...s, type: "Morning" })),
+  ...eveningSlots.map((s) => ({ ...s, type: "Evening" })),
+];
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -219,15 +286,27 @@ if (formData.address && formData.address.length < 5) {
         }
       }
 
+      const formattedAvailability = 
+  `${formData.availableStart} - ${formData.availableEnd} (${formData.availableDays.join(",")})`;
+
+  const availabilityData = {
+  start: formData.availableStart,
+  end: formData.availableEnd,
+  days: formData.availableDays,
+  duration: formData.slotDuration,
+  slots: formData.generatedSlots,
+};
+
       // Upload profile data to IPFS
-      const profileData = {
-        ...formData,
-        availableHours: formattedAvailability,
-        certificates: certificateHashes,
-        registrationDate: new Date().toISOString(),
-        walletAddress: address,
-        status: "pending_approval",
-      };
+  const profileData = {
+  ...formData,
+  availableHours: formattedAvailability,
+  availability: availabilityData,
+  certificates: certificateHashes,
+  registrationDate: new Date().toISOString(),
+  walletAddress: address,
+  status: "pending_approval",
+};
 
       const ipfsResult = await ipfsService.uploadDoctorProfile(
         profileData,
@@ -712,7 +791,8 @@ if (formData.address && formData.address.length < 5) {
     Available Hours
   </label>
 
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+ <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+  <h4 className="font-medium mt-2">Morning Session</h4>
     <Input
       label="Start Time"
       type="time"
@@ -728,6 +808,44 @@ if (formData.address && formData.address.length < 5) {
       value={formData.availableEnd}
       onChange={handleInputChange}
     />
+<h4 className="font-medium mt-4">Evening Session</h4>
+    <Input
+  label="Evening Start Time"
+  type="time"
+  name="eveningStart"
+  value={formData.eveningStart}
+  onChange={handleInputChange}
+/>
+
+<Input
+  label="Evening End Time"
+  type="time"
+  name="eveningEnd"
+  value={formData.eveningEnd}
+  onChange={handleInputChange}
+/>
+
+    <Select
+  label="Morning Slot Duration"
+  name="morningDuration"
+  value={formData.morningDuration}
+  onChange={handleInputChange}
+>
+  <option value="15">15 min</option>
+  <option value="30">30 min</option>
+  <option value="60">60 min</option>
+</Select>
+
+<Select
+  label="Evening Slot Duration"
+  name="eveningDuration"
+  value={formData.eveningDuration}
+  onChange={handleInputChange}
+>
+  <option value="15">15 min</option>
+  <option value="30">30 min</option>
+  <option value="60">60 min</option>
+</Select>
   </div>
 
   {/* Days Selection */}
@@ -758,6 +876,68 @@ if (formData.address && formData.address.length < 5) {
 </div>
               </div>
             </Card>
+
+ <Button
+  type="button"
+  onClick={() => {
+    const slots = generateTimeSlots();
+
+    setFormData((prev) => ({
+      ...prev,
+      generatedSlots: slots,
+    }));
+  }}
+>
+  Generate Slots
+</Button>
+{formData.generatedSlots && formData.generatedSlots.length > 0 && (
+  <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+    <h4 className="font-medium mb-2">Generated Slots:</h4>
+
+    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+  {formData.generatedSlots && formData.generatedSlots.length > 0 && (
+  // <div className="mt-4 p-6 border rounded-xl bg-gray-50">
+  <div className="mt-6 p-8 border-2 rounded-2xl bg-gray-50 min-h-[180px] shadow-sm">
+    <h4 className="font-medium mb-4 text-lg">Generated Slots:</h4>
+
+    {/* 🌅 Morning */}
+    <div className="mb-4">
+      <h5 className="font-semibold text-blue-600 mb-2">Morning Session</h5>
+      <div className="flex flex-wrap gap-2">
+        {formData.generatedSlots
+          .filter((slot) => slot.type === "Morning")
+          .map((slot, index) => (
+            <span
+              key={index}
+              className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm"
+            >
+              {slot.time}
+            </span>
+          ))}
+      </div>
+    </div>
+
+    {/* 🌆 Evening */}
+    <div>
+      <h5 className="font-semibold text-orange-600 mb-2">Evening Session</h5>
+      <div className="flex flex-wrap gap-2">
+        {formData.generatedSlots
+          .filter((slot) => slot.type === "Evening")
+          .map((slot, index) => (
+            <span
+              key={index}
+              className="px-3 py-1 bg-orange-100 text-orange-700 rounded text-sm"
+            >
+              {slot.time}
+            </span>
+          ))}
+      </div>
+    </div>
+  </div>
+)}
+    </div>
+  </div>
+)}
 
             {/* About Section */}
             <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200">

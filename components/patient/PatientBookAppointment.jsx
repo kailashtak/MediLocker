@@ -266,11 +266,13 @@ const PatientBookAppointment = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [patientData, setPatientData] = useState(null);
   const [appointmentFee, setAppointmentFee] = useState("0.0025");
+  const [availableSlots, setAvailableSlots] = useState([]);
 
   const [appointmentForm, setAppointmentForm] = useState({
     date: "",
     timeFrom: "",
     timeTo: "",
+    selectedSlot: "", 
     condition: "",
     message: "",
     urgency: "normal",
@@ -408,20 +410,38 @@ const PatientBookAppointment = () => {
     fetchData();
   }, [isConnected, address, router.query]);
 
-  const handleDoctorSelect = (doctor) => {
-    console.log("handleDoctorSelect called with:", doctor);
-    console.log("Doctor ID:", safeNumberConversion(doctor.id));
+const handleDoctorSelect = async (doctor) => {
+  console.log("handleDoctorSelect called with:", doctor);
 
-    setSelectedDoctor(doctor);
-    console.log("Selected doctor state set");
+  setSelectedDoctor(doctor);
 
-    // Add a small delay to ensure state is updated, then show feedback
-    setTimeout(() => {
-      toast.success(
-        `Dr. ${doctor?.name || safeNumberConversion(doctor.id)} selected!`
-      );
-    }, 100);
-  };
+  try {
+    if (doctor.IPFS_URL) {
+      let hash = doctor.IPFS_URL;
+
+      if (hash.includes("/ipfs/")) {
+        hash = hash.split("/ipfs/")[1];
+      }
+
+      const doctorData = await ipfsService.fetchFromIPFS(hash);
+
+      console.log("Doctor IPFS Data:", doctorData);
+
+      if (doctorData?.availability?.slots) {
+        setAvailableSlots(doctorData.availability.slots);
+      } else {
+        setAvailableSlots([]);
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching slots:", error);
+    setAvailableSlots([]);
+  }
+
+  toast.success(
+    `Dr. ${doctor?.name || safeNumberConversion(doctor.id)} selected!`
+  );
+};
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
