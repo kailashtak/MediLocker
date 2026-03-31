@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/router";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
   FiCalendar,
   FiClock,
@@ -62,9 +64,13 @@ import ipfsService from "../../utils/ipfs";
 import { truncateAddress, safeNumberConversion } from "../../utils/helpers";
 import toast from "react-hot-toast";
 
+
+
 const DoctorSelectionCard = ({ doctor, onSelect, isSelected }) => {
   const [doctorData, setDoctorData] = useState(null);
   const [loading, setLoading] = useState(false);
+
+
 
   useEffect(() => {
     const fetchDoctorData = async () => {
@@ -267,6 +273,8 @@ const PatientBookAppointment = () => {
   const [patientData, setPatientData] = useState(null);
   const [appointmentFee, setAppointmentFee] = useState("0.0025");
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [doctorAvailableDays, setDoctorAvailableDays] = useState([]);
 
   const [appointmentForm, setAppointmentForm] = useState({
     date: "",
@@ -290,6 +298,15 @@ const PatientBookAppointment = () => {
   } = useHealthcareContract();
 
   useEffect(() => {
+  if (!selectedDoctor || !appointmentForm.date) return;
+
+  const key = `${selectedDoctor.id}-${appointmentForm.date}`;
+  const stored = JSON.parse(localStorage.getItem(key)) || [];
+
+  setBookedSlots(stored);
+}, [selectedDoctor, appointmentForm.date]);
+
+  useEffect(() => {
     const fetchData = async () => {
       // Allow development testing without strict validation
       if (process.env.NODE_ENV === "development") {
@@ -308,6 +325,8 @@ const PatientBookAppointment = () => {
         const contractInfo = await getContractInfo();
         console.log("Contract info:", contractInfo);
         setAppointmentFee(contractInfo?.appointmentFee || "0.0025");
+
+
 
         // Get approved doctors
         const approvedDoctors = await getAllApprovedDoctors();
@@ -425,13 +444,23 @@ const handleDoctorSelect = async (doctor) => {
 
       const doctorData = await ipfsService.fetchFromIPFS(hash);
 
-      console.log("Doctor IPFS Data:", doctorData);
+      console.log("Doctor IPFS Data FULL:", JSON.stringify(doctorData, null, 2));
 
       if (doctorData?.availability?.slots) {
         setAvailableSlots(doctorData.availability.slots);
       } else {
         setAvailableSlots([]);
       }
+
+      setDoctorAvailableDays(doctorData?.availability?.days || []);
+
+
+      // ✅ Load already booked slots for this doctor + date
+const key = `${doctor.id}-${appointmentForm.date}`;
+
+const stored = JSON.parse(localStorage.getItem(key)) || [];
+
+setBookedSlots(stored);
     }
   } catch (error) {
     console.error("Error fetching slots:", error);
@@ -443,13 +472,36 @@ const handleDoctorSelect = async (doctor) => {
   );
 };
 
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setAppointmentForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+const handleFormChange = (e) => {
+  const { name, value } = e.target;
+
+  // ✅ ONLY for date field
+  if (name === "date") {
+    const selectedDate = new Date(value);
+
+    const dayName = selectedDate.toLocaleDateString("en-US", {
+      weekday: "short",
+    }); // Mon, Tue, Wed...
+
+    console.log("Selected Day:", dayName);
+    console.log("Doctor Available Days:", doctorAvailableDays);
+
+    // ❌ If doctor not available
+    if (
+      doctorAvailableDays.length > 0 &&
+      !doctorAvailableDays.includes(dayName)
+    ) {
+      toast.error("Doctor is not available on this day");
+      return; // stop update
+    }
+  }
+
+  // ✅ normal update
+  setAppointmentForm((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+};
 
   const handleNextStep = () => {
     console.log("handleNextStep called, current step:", step);
@@ -474,18 +526,18 @@ const handleDoctorSelect = async (doctor) => {
   };
 
   const validateAppointmentForm = () => {
-    const { date, timeFrom, timeTo, condition } = appointmentForm;
+    const { date, selectedSlot, condition } = appointmentForm;
 
-    if (!date || !timeFrom || !timeTo || !condition) {
+if (!date || !selectedSlot || !condition) {
       toast.error("Please fill in all required fields");
       return false;
     }
 
     // Validate time range
-    if (timeFrom >= timeTo) {
-      toast.error("End time must be after start time");
-      return false;
-    }
+    // if (timeFrom >= timeTo) {
+    //   toast.error("End time must be after start time");
+    //   return false;
+    // }
 
     // Validate date is not in the past
     const selectedDate = new Date(date);
@@ -505,13 +557,14 @@ const handleDoctorSelect = async (doctor) => {
       selectedDoctor: selectedDoctor
         ? safeNumberConversion(selectedDoctor.id)
         : null,
+        
       patientData: patientData ? safeNumberConversion(patientData.id) : null,
       appointmentForm,
       appointmentFee,
       isConnected,
       address,
     });
-
+console.log("FINAL FORM DATA:", appointmentForm);
     if (!selectedDoctor || !patientData) {
       toast.error("Missing required information");
       return;
@@ -605,6 +658,22 @@ const handleDoctorSelect = async (doctor) => {
       console.log("Booking result:", result);
 
       toast.success("Appointment booked successfully!");
+
+      // ✅ Mark slot as booked in state
+setBookedSlots((prev) => [
+  ...prev,
+  appointmentForm.selectedSlot,
+]);
+
+// ✅ Save to localStorage (persistent)
+const key = `${selectedDoctor.id}-${appointmentForm.date}`;
+
+const existing = JSON.parse(localStorage.getItem(key)) || [];
+
+localStorage.setItem(
+  key,
+  JSON.stringify([...existing, appointmentForm.selectedSlot])
+);
 
       // Wait a bit for the transaction to be processed
       setTimeout(() => {
@@ -1080,47 +1149,75 @@ const handleDoctorSelect = async (doctor) => {
                     <FiCalendar className="h-4 w-4 text-blue-600" />
                     Appointment Date *
                   </label>
-                  <Input
-                    type="date"
-                    name="date"
-                    value={appointmentForm.date}
-                    onChange={handleFormChange}
-                    min={new Date().toISOString().split("T")[0]}
-                    required
-                    className="focus:ring-blue-500 focus:border-blue-500"
-                  />
+<DatePicker
+  selected={
+    appointmentForm.date ? new Date(appointmentForm.date) : null
+  }
+  onChange={(date) => {
+    const dayName = date.toLocaleDateString("en-US", {
+      weekday: "short",
+    });
+
+    if (
+      doctorAvailableDays.length > 0 &&
+      !doctorAvailableDays.includes(dayName)
+    ) {
+      toast.error("Doctor is not available on this day");
+      return;
+    }
+
+    setAppointmentForm((prev) => ({
+      ...prev,
+      date: date.toISOString().split("T")[0],
+    }));
+  }}
+  filterDate={(date) => {
+    const dayName = date.toLocaleDateString("en-US", {
+      weekday: "short",
+    });
+
+    return doctorAvailableDays.includes(dayName);
+  }}
+  minDate={new Date()}
+  className="w-full px-4 py-3 border-2 border-blue-200 rounded-xl"
+/>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
-                      <FiClock className="h-4 w-4 text-blue-600" />
-                      Start Time *
-                    </label>
-                    <Input
-                      type="time"
-                      name="timeFrom"
-                      value={appointmentForm.timeFrom}
-                      onChange={handleFormChange}
-                      required
-                      className="focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
-                      <FiClock className="h-4 w-4 text-blue-600" />
-                      End Time *
-                    </label>
-                    <Input
-                      type="time"
-                      name="timeTo"
-                      value={appointmentForm.timeTo}
-                      onChange={handleFormChange}
-                      required
-                      className="focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
+          <div>
+  <label className="block text-sm font-bold text-gray-700 mb-2">
+    Select Available Slot *
+  </label>
+
+  <Select
+    name="selectedSlot"
+    value={appointmentForm.selectedSlot}
+    onChange={(e) => {
+  const slot = e.target.value;
+
+  // Example slot: "09:00 - 09:15"
+  const [from, to] = slot.split(" - ");
+
+  setAppointmentForm((prev) => ({
+    ...prev,
+    selectedSlot: slot,
+    timeFrom: from,
+    timeTo: to,
+  }));
+}}
+    required
+  >
+    
+    <option value="">Select Slot</option>
+
+    {availableSlots
+  .filter((slot) => !bookedSlots.includes(slot.time))
+  .map((slot, index) => (
+    <option key={index} value={slot.time}>
+      {slot.time} ({slot.type})
+    </option>
+  ))}
+  </Select>
+</div>
 
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-1">
@@ -1199,11 +1296,10 @@ const handleDoctorSelect = async (doctor) => {
             <Button
               onClick={handleNextStep}
               disabled={
-                !appointmentForm.date ||
-                !appointmentForm.timeFrom ||
-                !appointmentForm.timeTo ||
-                !appointmentForm.condition
-              }
+  !appointmentForm.date ||
+  !appointmentForm.selectedSlot ||
+  !appointmentForm.condition
+}
               className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-12 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <MdVerifiedUser className="mr-3 h-6 w-6" />
@@ -1260,7 +1356,8 @@ const handleDoctorSelect = async (doctor) => {
                     <span className="text-gray-600 font-medium">Time:</span>
                   </div>
                   <span className="font-bold text-gray-900">
-                    {appointmentForm.timeFrom} - {appointmentForm.timeTo}
+                    {/* {appointmentForm.timeFrom} - {appointmentForm.timeTo} */}
+                    {appointmentForm.selectedSlot || "-"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-white rounded-lg border border-emerald-200">

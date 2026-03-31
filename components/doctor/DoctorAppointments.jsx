@@ -296,9 +296,11 @@ const AppointmentCard = ({
                 <FiClock className="h-4 w-4 text-blue-600" />
                 <p className="text-sm font-bold text-blue-900">Time Slot</p>
               </div>
-              <p className="text-blue-800 font-medium">
-                {appointment.from} - {appointment.to}
-              </p>
+             <p className="text-blue-800 font-medium">
+  {appointment.from && appointment.to
+    ? `${appointment.from} - ${appointment.to}`
+    : appointment.selectedSlot || "-"}
+</p>
             </div>
             <div className="bg-white rounded-xl p-4 border border-purple-200">
               <div className="flex items-center space-x-2 mb-2">
@@ -459,9 +461,11 @@ const AppointmentDetailsModal = ({
                     <p className="text-blue-800 font-medium">
                       {appointment.appointmentDate}
                     </p>
-                    <p className="text-blue-700">
-                      {appointment.from} - {appointment.to}
-                    </p>
+                 <p className="text-blue-700">
+  {appointment.from && appointment.to
+    ? `${appointment.from} - ${appointment.to}`
+    : appointment.selectedSlot || "-"}
+</p>
                   </div>
                   <div className="bg-white rounded-xl p-4 border border-blue-200">
                     <p className="text-sm font-bold text-blue-900 mb-2">
