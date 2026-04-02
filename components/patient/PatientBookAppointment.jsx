@@ -448,6 +448,7 @@ const handleDoctorSelect = async (doctor) => {
 
       if (doctorData?.availability?.slots) {
         setAvailableSlots(doctorData.availability.slots);
+        console.log("Slots:", doctorData.availability.slots);
       } else {
         setAvailableSlots([]);
       }
@@ -1153,24 +1154,28 @@ localStorage.setItem(
   selected={
     appointmentForm.date ? new Date(appointmentForm.date) : null
   }
-  onChange={(date) => {
-    const dayName = date.toLocaleDateString("en-US", {
-      weekday: "short",
-    });
+ onChange={(date) => {
+  const dayName = date.toLocaleDateString("en-US", {
+    weekday: "short",
+  });
 
-    if (
-      doctorAvailableDays.length > 0 &&
-      !doctorAvailableDays.includes(dayName)
-    ) {
-      toast.error("Doctor is not available on this day");
-      return;
-    }
+  if (
+    doctorAvailableDays.length > 0 &&
+    !doctorAvailableDays.includes(dayName)
+  ) {
+    toast.error("Doctor is not available on this day");
+    return;
+  }
 
-    setAppointmentForm((prev) => ({
-      ...prev,
-      date: date.toISOString().split("T")[0],
-    }));
-  }}
+  // ✅ FIX: declare BEFORE setState
+  const localDate = new Date(date);
+  localDate.setMinutes(localDate.getMinutes() - localDate.getTimezoneOffset());
+
+  setAppointmentForm((prev) => ({
+    ...prev,
+    date: localDate.toISOString().split("T")[0],
+  }));
+}}
   filterDate={(date) => {
     const dayName = date.toLocaleDateString("en-US", {
       weekday: "short",
@@ -1217,6 +1222,112 @@ localStorage.setItem(
     </option>
   ))}
   </Select>
+
+
+{(() => {
+  const morningSlots = availableSlots.filter(
+    (slot) => slot.type === "morning"
+  );
+
+  const eveningSlots = availableSlots.filter(
+    (slot) => slot.type === "evening"
+  );
+
+  return (
+<div className="mt-3">
+
+  <p className="text-sm font-semibold text-gray-600 mb-2">
+    🌅 Morning
+  </p>
+
+  <div className="flex flex-wrap gap-2">
+    {availableSlots
+      .filter((slot) => slot.type === "Morning")
+      .map((slot) => {
+        const isBooked = bookedSlots.includes(slot.time);
+
+        return (
+          <button
+            key={slot.time}
+            disabled={isBooked}
+            onClick={() => {
+              const [from, to] = slot.time.split(" - ");
+
+              setAppointmentForm((prev) => ({
+                ...prev,
+                selectedSlot: slot.time,
+                timeFrom: from,
+                timeTo: to,
+              }));
+            }}
+            className={`px-3 py-2 border rounded-lg text-sm
+              ${
+                isBooked
+                  ? "bg-gray-200 text-gray-400 line-through cursor-not-allowed"
+                  : appointmentForm.selectedSlot === slot.time
+                  ? "bg-green-500 text-white"
+                  : "bg-white hover:border-green-400"
+              }`}
+          >
+            {slot.time}
+          </button>
+        );
+      })}
+
+
+      {/* 🌙 Evening */}
+{availableSlots.filter((slot) => slot.type === "Evening").length > 0 && (
+  <div className="mt-3">
+    <p className="text-sm font-semibold text-gray-600 mb-2">
+      🌙 Evening
+    </p>
+
+    <div className="flex flex-wrap gap-2">
+      {availableSlots
+        .filter((slot) => slot.type === "Evening")
+        .map((slot) => {
+          const isBooked = bookedSlots.includes(slot.time);
+
+          return (
+            <button
+              key={slot.time}
+              disabled={isBooked}
+              onClick={() => {
+                const [from, to] = slot.time.split(" - ");
+
+                setAppointmentForm((prev) => ({
+                  ...prev,
+                  selectedSlot: slot.time,
+                  timeFrom: from,
+                  timeTo: to,
+                }));
+              }}
+              className={`px-3 py-2 border rounded-lg text-sm
+                ${
+                  isBooked
+                    ? "bg-gray-200 text-gray-400 line-through cursor-not-allowed"
+                    : appointmentForm.selectedSlot === slot.time
+                    ? "bg-green-500 text-white"
+                    : "bg-white hover:border-green-400"
+                }`}
+            >
+              {slot.time}
+            </button>
+          );
+        })}
+    </div>
+  </div>
+)}
+  </div>
+
+</div>
+
+  );
+})()} 
+
+
+
+
 </div>
 
                 <div>
