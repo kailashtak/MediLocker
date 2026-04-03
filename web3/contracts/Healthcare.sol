@@ -392,6 +392,17 @@ function REVOKE_ACCESS(uint _patientId, address _doctor) public {
             uint adminShare = msg.value / 10;
             uint doctorShare = msg.value - adminShare;
 
+            for (uint i = 1; i <= appointmentCount; i++) {
+    if (
+        appointments[i].doctorId == _doctorId &&
+        keccak256(bytes(appointments[i].appointmentDate)) == keccak256(bytes(_appointmentDate)) &&
+        keccak256(bytes(appointments[i].from)) == keccak256(bytes(_from)) &&
+        keccak256(bytes(appointments[i].to)) == keccak256(bytes(_to))
+    ) {
+        revert("Slot already booked");
+    }
+}
+
             appointmentCount++;
             appointments[appointmentCount] = Appointment(appointmentCount, _patientId, _doctorId, block.timestamp, _from,_to, _appointmentDate, _condition, _message, true);
             patientAccess[_patientId][doctors[_doctorId].accountAddress] = true;

@@ -295,15 +295,48 @@ const PatientBookAppointment = () => {
     bookAppointment,
     getUserType,
     getContractInfo,
+    getAllAppointments
   } = useHealthcareContract();
 
-  useEffect(() => {
-  if (!selectedDoctor || !appointmentForm.date) return;
+//   useEffect(() => {
+//   if (!selectedDoctor || !appointmentForm.date) return;
 
-  const key = `${selectedDoctor.id}-${appointmentForm.date}`;
-  const stored = JSON.parse(localStorage.getItem(key)) || [];
+//   const key = `${selectedDoctor.id}-${appointmentForm.date}`;
+//   const stored = JSON.parse(localStorage.getItem(key)) || [];
 
-  setBookedSlots(stored);
+//   setBookedSlots(stored);
+// }, [selectedDoctor, appointmentForm.date]);
+
+useEffect(() => {
+  const fetchBookedSlots = async () => {
+    // if (!contract || !selectedDoctor || !appointmentForm.date) return;
+if (!selectedDoctor || !appointmentForm.date) return;
+
+    try {
+      // const allAppointments = await contract.GET_ALL_APPOINTMENTS();
+      const allAppointments = await getAllAppointments();
+
+      const filtered = allAppointments.filter((appt) => {
+        return (
+          Number(appt.doctorId) === Number(selectedDoctor.id) &&
+          // appt.appointmentDate === appointmentForm.date
+          appt.appointmentDate.startsWith(appointmentForm.date)
+        );
+      });
+
+      const slots = filtered.map(
+        // (appt) => `${appt.from} - ${appt.to}`
+        (appt) => `${appt.from}-${appt.to}` // ❗ NO SPACES
+      );
+
+      setBookedSlots(slots);
+    } catch (err) {
+      console.error("Error fetching appointments:", err);
+    }
+  };
+
+  fetchBookedSlots();
+// }, [contract, selectedDoctor, appointmentForm.date]);
 }, [selectedDoctor, appointmentForm.date]);
 
   useEffect(() => {
@@ -457,11 +490,11 @@ const handleDoctorSelect = async (doctor) => {
 
 
       // ✅ Load already booked slots for this doctor + date
-const key = `${doctor.id}-${appointmentForm.date}`;
+// const key = `${doctor.id}-${appointmentForm.date}`;
 
-const stored = JSON.parse(localStorage.getItem(key)) || [];
+// const stored = JSON.parse(localStorage.getItem(key)) || [];
 
-setBookedSlots(stored);
+// setBookedSlots(stored);
     }
   } catch (error) {
     console.error("Error fetching slots:", error);
@@ -661,20 +694,20 @@ console.log("FINAL FORM DATA:", appointmentForm);
       toast.success("Appointment booked successfully!");
 
       // ✅ Mark slot as booked in state
-setBookedSlots((prev) => [
-  ...prev,
-  appointmentForm.selectedSlot,
-]);
+// setBookedSlots((prev) => [
+//   ...prev,
+//   appointmentForm.selectedSlot,
+// ]);
 
 // ✅ Save to localStorage (persistent)
 const key = `${selectedDoctor.id}-${appointmentForm.date}`;
 
 const existing = JSON.parse(localStorage.getItem(key)) || [];
 
-localStorage.setItem(
-  key,
-  JSON.stringify([...existing, appointmentForm.selectedSlot])
-);
+// localStorage.setItem(
+//   key,
+//   JSON.stringify([...existing, appointmentForm.selectedSlot])
+// );
 
       // Wait a bit for the transaction to be processed
       setTimeout(() => {
@@ -1200,7 +1233,8 @@ localStorage.setItem(
   const slot = e.target.value;
 
   // Example slot: "09:00 - 09:15"
-  const [from, to] = slot.split(" - ");
+  // const [from, to] = slot.split(" - ");
+  const [from, to] = slot.split("-");
 
   setAppointmentForm((prev) => ({
     ...prev,
@@ -1214,13 +1248,20 @@ localStorage.setItem(
     
     <option value="">Select Slot</option>
 
-    {availableSlots
-  .filter((slot) => !bookedSlots.includes(slot.time))
-  .map((slot, index) => (
-    <option key={index} value={slot.time}>
-      {slot.time} ({slot.type})
+ {availableSlots.map((slot, index) => {
+  const normalizedSlot = slot.time.replace(" - ", "-");
+  const isBooked = bookedSlots.includes(normalizedSlot);
+
+  return (
+    <option
+      key={index}
+      value={normalizedSlot}
+      disabled={isBooked}
+    >
+      {slot.time} ({slot.type}) {isBooked ? "❌ Booked" : ""}
     </option>
-  ))}
+  );
+})}
   </Select>
 
 
@@ -1244,7 +1285,9 @@ localStorage.setItem(
     {availableSlots
       .filter((slot) => slot.type === "Morning")
       .map((slot) => {
-        const isBooked = bookedSlots.includes(slot.time);
+        // const isBooked = bookedSlots.includes(slot.time);
+        const normalizedSlot = slot.time.replace(" - ", "-");
+const isBooked = bookedSlots.includes(normalizedSlot);
 
         return (
           <button
@@ -1286,7 +1329,9 @@ localStorage.setItem(
       {availableSlots
         .filter((slot) => slot.type === "Evening")
         .map((slot) => {
-          const isBooked = bookedSlots.includes(slot.time);
+          // const isBooked = bookedSlots.includes(slot.time);
+          const normalizedSlot = slot.time.replace(" - ", "-");
+const isBooked = bookedSlots.includes(normalizedSlot);
 
           return (
             <button

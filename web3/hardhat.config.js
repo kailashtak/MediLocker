@@ -17,6 +17,7 @@ module.exports = {
   networks: {
     hardhat: {
       chainId: 1337,
+          allowUnlimitedContractSize: true,
     },
     // Sepolia: {
     //   url: process.env.NETWORK_RPC_URL || process.env.NETWORK_RPC_URL,
@@ -32,6 +33,7 @@ module.exports = {
     : [],
   chainId: 11155111,
 },
+
 
     
   },
