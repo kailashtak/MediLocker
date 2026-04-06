@@ -218,7 +218,11 @@ const PatientRecords = () => {
                 onClick={() => {
                   setPreviewLoaded(false);
                   setPreview({
-                    url: `https://ipfs.io/ipfs/${r.fileHash}`,
+                    // url: `https://ipfs.io/ipfs/${r.fileHash}`
+                    url: `https://gateway.pinata.cloud/ipfs/${r.fileHash}`,
+
+
+                    
                     type: r.fileType,
                   });
                 }}
@@ -278,12 +282,13 @@ const PatientRecords = () => {
 
       {/* PREVIEW */}
       {preview && (
-        <div className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-6">
+        <div className="fixed top-[80px] left-0 right-0 bottom-0 z-[9999] bg-black/80 flex items-center justify-center p-6">
           <div className="relative w-full max-w-6xl h-[90vh] bg-white rounded-2xl shadow-2xl">
 
             <button
               onClick={() => setPreview(null)}
               className="absolute top-4 right-4 bg-black text-white rounded-full w-10 h-10 flex items-center justify-center"
+              // className="absolute top-4 right-4 z-[10000] bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center hover:scale-110 transition"
             >
               ✕
             </button>

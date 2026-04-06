@@ -200,8 +200,8 @@ const Sidebar = ({ isOpen, onClose, userType }) => {
         color: "blue",
       },
       {
-        name: "My Prescriptions",
-        href: "/patient/prescriptions",
+        name: "Upload Records",
+        href: "/patient/records/",
         icon: FaSyringe,
         color: "indigo",
       },
