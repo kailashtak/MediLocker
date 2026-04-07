@@ -964,9 +964,9 @@ const revokeAccess = async (doctorAddress) => {
                   <FiPhone className="h-4 w-4 text-red-600" />
                   <div>
                     <p className="text-sm font-bold text-red-800">
-                      Emergency Hotline
+                      Emergency Helpline
                     </p>
-                    <p className="text-sm text-red-700">911 (US) / 112 (EU)</p>
+                    <p className="text-sm text-red-700">+91 (IN)</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3 p-3 bg-pink-100 rounded-lg">
