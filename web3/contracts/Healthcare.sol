@@ -151,12 +151,12 @@ struct MedicalRecord {
     //END PRESCRIBED
 
     modifier onlyAdmin() {
-        require(msg.sender == admin, "Only admin can perform this action");
+        require(msg.sender == admin);
         _;
     }
 
     modifier onlyDoctor() {
-        require(registeredDoctors[msg.sender], "Only registered doctors can perform this action");
+        require(registeredDoctors[msg.sender]);
         _;
     }
 
@@ -283,7 +283,7 @@ struct MedicalRecord {
 
     // UPDATE BY DOCTOR
     function UPDATE_PATIENT_MEDICAL_HISTORY(uint _patientId, string memory _newMedicalHistory) public onlyDoctor {
-            require(_patientId <= patientCount, "Patient does not exist");
+            require(_patientId <= patientCount);
             patients[_patientId].medicalHistory.push(_newMedicalHistory);
 
             ADD_NOTIFICATION(msg.sender, "You have successfully update, patient medical history", "Doctor");
@@ -489,12 +489,11 @@ function REVOKE_ACCESS(uint _patientId, address _doctor) public {
     //--------------GET APTIENT------------------
 
     function GET_PATIENT_RECORDS(uint _patientId) public view returns (MedicalRecord[] memory) {
-    require(_patientId <= patientCount, "Patient does not exist");
+    require(_patientId <= patientCount );
     require(
         patients[_patientId].accountAddress == msg.sender ||
         patientAccess[_patientId][msg.sender] == true ||
-        msg.sender == admin,
-        "Access denied"
+        msg.sender == admin
     );
 
     return patientRecords[_patientId];
@@ -557,7 +556,7 @@ function REVOKE_ACCESS(uint _patientId, address _doctor) public {
                 return i;
             }
         }
-        revert("Patient not found");
+        revert();
     }
 
     function GET_PATIENT_APPOINTMENT(uint _appointmentId) public view returns (Appointment memory) {
@@ -675,7 +674,7 @@ function GET_PATIENT_MEDICIAL_HISTORY(uint _patientId) public view returns (stri
                 return i;
             }
         }
-        revert("Doctor not found");
+        revert();
     }
 
     function GET_DOCTOR_APPOINTMENTS_HISTORYS(uint _doctorId) public view returns (Appointment[] memory) {
