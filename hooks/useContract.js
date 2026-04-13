@@ -457,6 +457,36 @@ export const useHealthcareContract = () => {
     [writeContract, isConnected]
   );
 
+  const cancelAppointment = useCallback(
+  async (appointmentId) => {
+    if (!isConnected) {
+      toast.error("Please connect your wallet");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const result = await writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: CONTRACT_ABI,
+        functionName: "CANCEL_APPOINTMENT",
+        args: [appointmentId],
+      });
+
+      toast.success("Appointment cancelled successfully!");
+      return result;
+    } catch (error) {
+      console.error("Error cancelling appointment:", error);
+      toast.error("Failed to cancel appointment");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  },
+  [writeContract, isConnected]
+);
+
   const buyMedicine = useCallback(
     async (patientId, medicineId, quantity, totalPrice) => {
       if (!isConnected) {
@@ -1119,6 +1149,7 @@ export const useHealthcareContract = () => {
     // Patient functions
     registerPatient,
     bookAppointment,
+    cancelAppointment,
     buyMedicine,
     getAllPatients,
     getPatientId,

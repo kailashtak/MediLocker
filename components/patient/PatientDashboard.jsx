@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
+
+
 import {
   FiCalendar,
   FiShoppingBag,
@@ -57,6 +59,7 @@ import { useWriteContract } from "wagmi";
 import { useReadContract } from "wagmi";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../../config/contract";
 import { usePublicClient } from "wagmi";
+import toast from "react-hot-toast";
 // import { useHealthcareContract } from "../../hooks/useContract";
 const PatientDashboard = () => {
   const [patientData, setPatientData] = useState(null);
@@ -64,6 +67,8 @@ const PatientDashboard = () => {
   const [prescriptions, setPrescriptions] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const [stats, setStats] = useState({
     totalAppointments: 0,
     activeAppointments: 0,
@@ -77,6 +82,7 @@ const PatientDashboard = () => {
   const [newRecord, setNewRecord] = useState(null);
   
   const router = useRouter();
+  const { doctorId, date, from, to, appointmentId } = router.query;
   const publicClient = usePublicClient();
 
 const [doctors, setDoctors] = useState([]);
@@ -104,6 +110,7 @@ const { data: records } = useReadContract({
     getPatientPrescriptions,
     getPatientOrders,
     getAllApprovedDoctors,
+      cancelAppointment,
   } = useHealthcareContract();
 
   useEffect(() => {
@@ -155,7 +162,9 @@ console.log("Doctor Names:", namesMap);
         ]);
 
         setPatientData(patientDetails);
-        setAppointments(patientAppointments || []);
+       setAppointments(
+  (patientAppointments || []).filter(appt => appt.isOpen)
+);
         setPrescriptions(patientPrescriptions || []);
         setOrders(patientOrders || []);
 
@@ -311,23 +320,24 @@ const revokeAccess = async (doctorAddress) => {
 };
 
 
-  const getAppointmentStatus = (appointment) => {
-    if (appointment.isOpen) {
-      return (
-        <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white border-none">
-          <MdSchedule className="w-3 h-3 mr-1" />
-          Active
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-none">
-          <MdVerifiedUser className="w-3 h-3 mr-1" />
-          Completed
-        </Badge>
-      );
-    }
-  };
+
+
+const getAppointmentStatus = (appointment) => {
+  if (appointment.isOpen) {
+    return (
+      <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white border-none">
+        Active
+      </Badge>
+    );
+  } else {
+    return (
+      <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white border-none">
+        Cancelled
+      </Badge>
+    );
+  }
+};
+
 
   if (loading) {
     return (
@@ -587,7 +597,7 @@ const revokeAccess = async (doctorAddress) => {
             </Button>
           </div>
           <div className="space-y-4">
-            {appointments.slice(0, 3).map((appointment, index) => (
+            {appointments.slice(0, 5).map((appointment, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between p-4 bg-white rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-shadow"
@@ -599,7 +609,7 @@ const revokeAccess = async (doctorAddress) => {
                   <div>
                     <p className="font-semibold text-gray-900 flex items-center gap-2">
                       <MdVerifiedUser className="h-4 w-4 text-blue-600" />
-                      Doctor ID: #{appointment.doctorId?.toString()}
+                     {doctorNames[doctors.find(d => d.id === appointment.doctorId)?.accountAddress] || `Doctor #${appointment.doctorId}`}
                     </p>
                     <p className="text-sm text-gray-600 flex items-center gap-1">
                       <FiClock className="h-3 w-3" />
@@ -607,7 +617,78 @@ const revokeAccess = async (doctorAddress) => {
                     </p>
                   </div>
                 </div>
-                {getAppointmentStatus(appointment)}
+                {/* {getAppointmentStatus(appointment)} */}
+
+ <div className="flex flex-col items-end gap-2">
+  {/* {getAppointmentStatus(appointment)} */}
+
+  {appointment.isOpen && (
+  <div className="flex gap-2">
+    
+<button
+  onClick={async () => {
+    try {
+      const full = appointment.appointmentDate;
+
+      const [datePart, timePart] = full.split(" ");
+      const [from, to] = timePart.split("-");
+
+      // 🔥 STEP 1: CANCEL OLD APPOINTMENT FIRST
+      await cancelAppointment(appointment.id);
+
+      toast.success("Old appointment cancelled");
+
+      // 🔥 STEP 2: WAIT (important for blockchain update)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // 🔥 STEP 3: REDIRECT TO BOOKING PAGE
+      router.push({
+        pathname: "/patient/appointment",
+        query: {
+          doctorId: appointment.doctorId,
+          date: datePart,
+          from: from,
+          to: to,
+        },
+      });
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Reschedule failed");
+    }
+  }}
+  className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-5 py-2 rounded-lg font-semibold shadow-md"
+>
+  Reschedule
+</button>
+
+    <button
+      onClick={() => {
+        setSelectedAppointmentId(appointment.id);
+        setShowCancelModal(true);
+      }}
+      className="bg-red-500 hover:bg-red-600 text-white text-sm px-5 py-2 rounded-lg font-semibold shadow-md"
+    >
+      Cancel
+    </button>
+
+
+    {/* <button
+  onClick={() => {
+    setAppointments((prev) =>
+      prev.filter((apt) => apt.id !== appointment.id)
+    );
+  }}
+  className="bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm px-3 py-2 rounded-lg font-semibold"
+>
+  ❌
+</button> */}
+
+  </div>
+)}
+</div>
+
+
               </div>
             ))}
             {appointments.length === 0 && (
@@ -1038,8 +1119,62 @@ const revokeAccess = async (doctorAddress) => {
           </p>
         </div>
       </Card>
+
+ {showCancelModal && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+    <div className="bg-white rounded-2xl p-8 w-[400px] shadow-2xl text-center scale-100">
+      <h2 className="text-2xl font-semibold mb-4">
+        Cancel Appointment?
+      </h2>
+
+      <p className="text-base text-gray-600 mb-6">
+        Are you sure you want to cancel this appointment?
+      </p>
+
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={async () => {
+  try {
+    await cancelAppointment(selectedAppointmentId);
+
+    // ✅ INSTANT UI UPDATE (NO FETCH)
+    setAppointments((prev) =>
+      prev.filter((appt) => appt.id !== selectedAppointmentId)
+    );
+
+    setShowCancelModal(false);
+
+  } catch (err) {
+    console.error(err);
+  }
+}}
+          className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold"
+        >
+          Yes, Cancel
+        </button>
+
+        <button
+          onClick={() => setShowCancelModal(false)}
+          className="bg-gray-300 hover:bg-gray-400 px-6 py-2 rounded-lg font-semibold"
+        >
+          No
+        </button>
+      </div>
     </div>
+  </div>
+)}
+
+
+
+    </div>
+
+
+
+
+
   );
+
+ 
 };
 
 export default PatientDashboard;

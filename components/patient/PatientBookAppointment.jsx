@@ -265,6 +265,7 @@ const DoctorSelectionCard = ({ doctor, onSelect, isSelected }) => {
 };
 
 const PatientBookAppointment = () => {
+
   const [step, setStep] = useState(1);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [doctors, setDoctors] = useState([]);
@@ -286,6 +287,9 @@ const PatientBookAppointment = () => {
     urgency: "normal",
   });
 
+
+
+
   const { address, isConnected } = useAccount();
   const router = useRouter();
   const {
@@ -295,7 +299,8 @@ const PatientBookAppointment = () => {
     bookAppointment,
     getUserType,
     getContractInfo,
-    getAllAppointments
+    getAllAppointments,
+    cancelAppointment,
   } = useHealthcareContract();
 
 //   useEffect(() => {
@@ -307,22 +312,53 @@ const PatientBookAppointment = () => {
 //   setBookedSlots(stored);
 // }, [selectedDoctor, appointmentForm.date]);
 
+
+
+
+
+
+useEffect(() => {
+  if (!router.isReady) return;
+
+  const { doctorId, date, from, to } = router.query;
+
+  if (doctorId && date && from && to && doctors.length > 0) {
+    const preSelectedDoctor = doctors.find(
+      (doc) => Number(doc.id) === Number(doctorId)
+    );
+
+    if (preSelectedDoctor) {
+      setSelectedDoctor(preSelectedDoctor);
+
+      // 🔥 FORCE STEP CHANGE AFTER DOCTOR IS SET
+      setTimeout(() => {
+        setStep(2);
+      }, 0);
+    }
+  }
+}, [router.isReady, doctors]);
+
+
+
 useEffect(() => {
   const fetchBookedSlots = async () => {
     // if (!contract || !selectedDoctor || !appointmentForm.date) return;
-if (!selectedDoctor || !appointmentForm.date) return;
+if (!selectedDoctor || !appointmentForm.date) {
+  setBookedSlots([]);   // 🔥 ADD THIS LINE
+  return;
+}
 
     try {
       // const allAppointments = await contract.GET_ALL_APPOINTMENTS();
       const allAppointments = await getAllAppointments();
 
-      const filtered = allAppointments.filter((appt) => {
-        return (
-          Number(appt.doctorId) === Number(selectedDoctor.id) &&
-          // appt.appointmentDate === appointmentForm.date
-          appt.appointmentDate.startsWith(appointmentForm.date)
-        );
-      });
+     const filtered = allAppointments.filter((appt) => {
+  return (
+    Number(appt.doctorId) === Number(selectedDoctor.id) &&
+    appt.isOpen === true &&   // ✅ ADD THIS LINE
+    appt.appointmentDate.startsWith(appointmentForm.date)
+  );
+});
 
       const slots = filtered.map(
         // (appt) => `${appt.from} - ${appt.to}`
@@ -337,7 +373,7 @@ if (!selectedDoctor || !appointmentForm.date) return;
 
   fetchBookedSlots();
 // }, [contract, selectedDoctor, appointmentForm.date]);
-}, [selectedDoctor, appointmentForm.date]);
+}, [selectedDoctor, appointmentForm.date, step, router.query]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -442,14 +478,33 @@ if (!selectedDoctor || !appointmentForm.date) return;
             (doc) =>
               safeNumberConversion(doc.id) === safeNumberConversion(doctorId)
           );
+          // if (preSelectedDoctor) {
+          //   console.log(
+          //     "Pre-selecting doctor from query params:",
+          //     safeNumberConversion(preSelectedDoctor.id)
+          //   );
+          //   setSelectedDoctor(preSelectedDoctor);
+          //   setStep(2);
+          // }
+
           if (preSelectedDoctor) {
-            console.log(
-              "Pre-selecting doctor from query params:",
-              safeNumberConversion(preSelectedDoctor.id)
-            );
-            setSelectedDoctor(preSelectedDoctor);
-            setStep(2);
-          }
+  setSelectedDoctor(preSelectedDoctor);
+  setStep(2);
+
+  // ✅ ALSO STORE SLOT + DATE (we will use next)
+  if (date && from && to) {
+    // const slot = `${from}-${to}`;
+    const slot = `${from} - ${to}`;
+
+    setAppointmentForm((prev) => ({
+      ...prev,
+      date: date,
+      selectedSlot: slot,
+      timeFrom: from,
+      timeTo: to,
+    }));
+  }
+}
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -615,6 +670,8 @@ console.log("FINAL FORM DATA:", appointmentForm);
 
     try {
       setBookingLoading(true);
+
+
 
       const { date, timeFrom, timeTo, condition, message } = appointmentForm;
 
@@ -1298,7 +1355,7 @@ const isBooked = bookedSlots.includes(normalizedSlot);
 
               setAppointmentForm((prev) => ({
                 ...prev,
-                selectedSlot: slot.time,
+                selectedSlot: slot.time.replace(" - ", "-"),
                 timeFrom: from,
                 timeTo: to,
               }));
@@ -1307,7 +1364,7 @@ const isBooked = bookedSlots.includes(normalizedSlot);
               ${
                 isBooked
                   ? "bg-gray-200 text-gray-400 line-through cursor-not-allowed"
-                  : appointmentForm.selectedSlot === slot.time
+                  : appointmentForm.selectedSlot === slot.time.replace(" - ", "-")
                   ? "bg-green-500 text-white"
                   : "bg-white hover:border-green-400"
               }`}
@@ -1342,7 +1399,7 @@ const isBooked = bookedSlots.includes(normalizedSlot);
 
                 setAppointmentForm((prev) => ({
                   ...prev,
-                  selectedSlot: slot.time,
+                  selectedSlot: slot.time.replace(" - ", "-"),
                   timeFrom: from,
                   timeTo: to,
                 }));
@@ -1351,7 +1408,8 @@ const isBooked = bookedSlots.includes(normalizedSlot);
                 ${
                   isBooked
                     ? "bg-gray-200 text-gray-400 line-through cursor-not-allowed"
-                    : appointmentForm.selectedSlot === slot.time
+                    // : appointmentForm.selectedSlot === slot.time
+                    :appointmentForm.selectedSlot === slot.time.replace(" - ", "-")
                     ? "bg-green-500 text-white"
                     : "bg-white hover:border-green-400"
                 }`}

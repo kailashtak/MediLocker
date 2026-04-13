@@ -536,6 +536,19 @@ export const CONTRACT_ABI = [
     {
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "_appointmentId",
+          "type": "uint256"
+        }
+      ],
+      "name": "CANCEL_APPOINTMENT",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "address",
           "name": "pubkey",
           "type": "address"

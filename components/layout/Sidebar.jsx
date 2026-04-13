@@ -181,12 +181,12 @@ const Sidebar = ({ isOpen, onClose, userType }) => {
         icon: MdMonitorHeart,
         color: "emerald",
       },
-      {
-        name: "Book Appointment",
-        href: "/patient/appointment",
-        icon: FaStethoscope,
-        color: "teal",
-      },
+      // {
+      //   name: "Book Appointment",
+      //   href: "/patient/appointment",
+      //   icon: FaStethoscope,
+      //   color: "teal",
+      // },
       {
         name: "Buy Medicine",
         href: "/patient/medicines",

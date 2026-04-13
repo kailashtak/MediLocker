@@ -62,6 +62,8 @@ import { Card, Badge, Button } from "../common";
 import LoadingSpinner from "../common/LoadingSpinner";
 import { useHealthcareContract } from "../../hooks/useContract";
 import { useRouter } from "next/router";
+import { usePublicClient } from "wagmi";
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../../config/contract";
 
 const AdminDashboard = () => {
   const [contractInfo, setContractInfo] = useState(null);
@@ -123,6 +125,19 @@ const AdminDashboard = () => {
         setMedicines(allMedicines || []);
         setAppointments(allAppointments || []);
 
+        const updatedDoctors = [];
+
+for (let doc of allDoctors) {
+  const name = await getDoctorName(doc.accountAddress);
+
+  updatedDoctors.push({
+    ...doc,
+    name,
+  });
+}
+
+setDoctors(updatedDoctors);
+
         // Calculate stats
         const approvedDoctors =
           allDoctors?.filter((doc) => doc.isApproved)?.length || 0;
@@ -152,6 +167,25 @@ const AdminDashboard = () => {
 
     fetchAdminData();
   }, [isConnected, address]);
+
+
+  const publicClient = usePublicClient();
+
+const getDoctorName = async (address) => {
+  try {
+    const res = await publicClient.readContract({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: "GET_USERNAME_TYPE",
+      args: [address],
+    });
+
+    return res.name;
+  } catch (err) {
+    console.error(err);
+    return "Unknown Doctor";
+  }
+};
 
   const handleApproveDoctor = async (doctorId) => {
     try {
@@ -542,7 +576,7 @@ const AdminDashboard = () => {
                       </div>
                       <div>
                         <p className="text-lg font-bold text-gray-900">
-                          Doctor ID: #{doctor.id?.toString()}
+                          Dr. {doctor.name || `Doctor #${doctor.id}`}
                         </p>
                         <p className="text-sm text-gray-600 flex items-center gap-2">
                           <FiShield className="h-3 w-3" />
@@ -605,12 +639,13 @@ const AdminDashboard = () => {
                       <FaUserMd className="h-6 w-6 text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-lg font-bold text-gray-900">
+                      {/* <p className="text-lg font-bold text-gray-900">
                         New doctor registered
-                      </p>
-                      <p className="text-sm text-gray-600 flex items-center gap-2">
+                      </p> */}
+                      <p className="text-md text-gray-600 font-bold flex items-center gap-2">
+                   
                         <MdSecurity className="h-3 w-3" />
-                        Doctor ID: #{doctor.id?.toString()}
+                         {doctor.name || `Doctor #${doctor.id}`}
                       </p>
                     </div>
                   </div>

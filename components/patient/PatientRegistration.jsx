@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/router";
+import { usePublicClient } from "wagmi";
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../../config/contract";
 import {
   FiHeart,
   FiUpload,
@@ -104,7 +106,18 @@ const PatientRegistration = () => {
           setRegistrationFee(contractInfo.registrationPatientFee);
         }
 
-        setAvailableDoctors(doctors || []);
+      const updatedDoctors = [];
+
+for (let doc of doctors) {
+  const name = await getDoctorName(doc.accountAddress);
+
+  updatedDoctors.push({
+    ...doc,
+    name,
+  });
+}
+
+setAvailableDoctors(updatedDoctors);
       } catch (error) {
         console.error("Error fetching initial data:", error);
       }
@@ -112,6 +125,24 @@ const PatientRegistration = () => {
 
     fetchInitialData();
   }, [isConnected, address]);
+
+
+  const publicClient = usePublicClient();
+
+const getDoctorName = async (address) => {
+  try {
+    const res = await publicClient.readContract({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: "GET_USERNAME_TYPE",
+      args: [address],
+    });
+
+    return res.name;
+  } catch {
+    return "Unknown Doctor";
+  }
+};
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -142,7 +173,8 @@ const PatientRegistration = () => {
       setFormData((prev) => ({
         ...prev,
         preferredDoctorAddress: doctor.accountAddress,
-        preferredDoctorName: `Doctor #${doctor.id}`,
+        // preferredDoctorName: `Doctor #${doctor.id}`,
+        preferredDoctorName: doctor.name || `Doctor #${doctor.id}`,
       }));
     }
   };
@@ -713,7 +745,7 @@ if (formData.address && formData.address.length < 5) {
                       </div>
                       <div className="flex-1">
                         <p className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-                          Doctor #{doctor.id.toString()}
+                          Dr. {doctor.name || `Doctor #${doctor.id.toString()}`}
                           {selectedDoctor?.id.toString() ===
                             doctor.id.toString() && (
                             <MdVerifiedUser className="h-4 w-4 text-teal-600" />
