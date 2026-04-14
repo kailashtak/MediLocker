@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/router";
 import DatePicker from "react-datepicker";
+import { usePublicClient } from "wagmi";
 import "react-datepicker/dist/react-datepicker.css";
 import {
   FiCalendar,
@@ -69,6 +70,7 @@ import toast from "react-hot-toast";
 const DoctorSelectionCard = ({ doctor, onSelect, isSelected }) => {
   const [doctorData, setDoctorData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const publicClient = usePublicClient();
 
 
 
@@ -292,6 +294,7 @@ const PatientBookAppointment = () => {
 
   const { address, isConnected } = useAccount();
   const router = useRouter();
+  const publicClient = usePublicClient();
   const {
     getAllApprovedDoctors,
     getPatientId,
@@ -727,7 +730,7 @@ console.log("FINAL FORM DATA:", appointmentForm);
         toast.success("Appointment booked successfully! (Development mode)");
 
         setTimeout(() => {
-          router.push("/patient/dashboard");
+          router.push("/patient/dashboard?refresh=" + Date.now());
         }, 1000);
         return;
       }
@@ -767,9 +770,9 @@ const existing = JSON.parse(localStorage.getItem(key)) || [];
 // );
 
       // Wait a bit for the transaction to be processed
-      setTimeout(() => {
-        router.push("/patient/dashboard");
-      }, 2000);
+await new Promise((resolve) => setTimeout(resolve, 2000));
+
+router.push("/patient/dashboard?refresh=" + Date.now());
     } catch (error) {
       console.error("Error booking appointment:", error);
 

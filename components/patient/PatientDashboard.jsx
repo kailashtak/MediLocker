@@ -69,6 +69,10 @@ const PatientDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showCancelModal, setShowCancelModal] = useState(false);
 const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
+const [showAllAppointments, setShowAllAppointments] = useState(false);
+const [filterType, setFilterType] = useState("all"); 
+const [searchTerm, setSearchTerm] = useState("");
+const [sortOrder, setSortOrder] = useState("latest");
   const [stats, setStats] = useState({
     totalAppointments: 0,
     activeAppointments: 0,
@@ -162,9 +166,11 @@ console.log("Doctor Names:", namesMap);
         ]);
 
         setPatientData(patientDetails);
-       setAppointments(
-  (patientAppointments || []).filter(appt => appt.isOpen)
-);
+//        setAppointments(
+//   (patientAppointments || []).filter(appt => appt.isOpen)
+// );
+
+setAppointments(patientAppointments || []);
         setPrescriptions(patientPrescriptions || []);
         setOrders(patientOrders || []);
 
@@ -185,7 +191,7 @@ console.log("Doctor Names:", namesMap);
     };
 
     fetchPatientData();
-  }, [isConnected, address]);
+}, [isConnected, address, router.asPath]);
 
   const formatDate = (timestamp) => {
     // Convert BigInt to Number for date operations
@@ -587,17 +593,20 @@ const getAppointmentStatus = (appointment) => {
               <FaStethoscope className="h-5 w-5 text-blue-600" />
               Recent Appointments
             </h2>
-            <Button
-              variant="outline"
-              size="small"
-              onClick={() => router.push("/patient/appointments")}
-              className="border-2 border-blue-300 text-blue-700 hover:bg-blue-50"
-            >
-              View All
-            </Button>
+<Button
+  variant="outline"
+  size="small"
+  onClick={() => setShowAllAppointments(true)}
+  className="border-2 border-blue-300 text-blue-700 hover:bg-blue-50"
+>
+  View All
+</Button>
           </div>
           <div className="space-y-4">
-            {appointments.slice(0, 5).map((appointment, index) => (
+            {appointments
+  .filter((appt) => appt.isOpen)   // ✅ ONLY ACTIVE
+  .slice(0, 5)
+  .map((appointment, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between p-4 bg-white rounded-xl border border-blue-200 shadow-sm hover:shadow-md transition-shadow"
@@ -1160,6 +1169,178 @@ const getAppointmentStatus = (appointment) => {
           No
         </button>
       </div>
+    </div>
+  </div>
+)}
+
+{showAllAppointments && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+
+    <div className="bg-white rounded-2xl p-6 w-[90%] max-w-4xl h-[70vh] flex flex-col shadow-2xl">
+
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">All Appointments</h2>
+
+        <button
+          onClick={() => setShowAllAppointments(false)}
+          className="text-gray-500 hover:text-black text-xl"
+        >
+          ✕
+        </button>
+      </div>
+
+{/* SEARCH */}
+<input
+  type="text"
+  placeholder="Search doctor..."
+  value={searchTerm}
+  onChange={(e) => setSearchTerm(e.target.value)}
+  className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+/>
+
+{/* SORT */}
+<div className="flex justify-between items-center mb-4">
+
+  <span className="text-sm text-gray-500 font-medium">Sort</span>
+
+  <div className="flex bg-gray-100 p-1 rounded-full">
+    <button
+      onClick={() => setSortOrder("latest")}
+      className={`px-3 py-1 text-sm rounded-full ${
+        sortOrder === "latest"
+          ? "bg-white shadow text-blue-600"
+          : "text-gray-600"
+      }`}
+    >
+      Latest
+    </button>
+
+    <button
+      onClick={() => setSortOrder("oldest")}
+      className={`px-3 py-1 text-sm rounded-full ${
+        sortOrder === "oldest"
+          ? "bg-white shadow text-blue-600"
+          : "text-gray-600"
+      }`}
+    >
+      Oldest
+    </button>
+  </div>
+
+</div>
+
+{/* FILTER BUTTONS */}
+<div className="flex items-center gap-1 bg-gray-100 p-1 rounded-full w-fit mb-4">
+
+  {["all", "active", "cancelled" , "past"].map((type) => (
+    <button
+      key={type}
+      onClick={() => setFilterType(type)}
+      className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+        filterType === type
+          ? "bg-white shadow text-blue-600"
+          : "text-gray-600 hover:text-black"
+      }`}
+    >
+      {type.charAt(0).toUpperCase() + type.slice(1)}
+    </button>
+  ))}
+
+</div>
+      {/* LIST */}
+      <div className="space-y-4 overflow-y-auto flex-1 pr-2">
+     {appointments
+  .filter((appointment) => {
+    const isPast =
+      new Date(appointment.appointmentDate.split(" ")[0]) < new Date();
+
+    const doctorName =
+      doctorNames[
+        doctors.find(d => d.id === appointment.doctorId)?.accountAddress
+      ] || `Doctor #${appointment.doctorId}`;
+
+    const matchesSearch = doctorName
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (filterType === "active") return appointment.isOpen;
+    if (filterType === "cancelled") return !appointment.isOpen && !isPast;
+    if (filterType === "past") return isPast;
+
+    return true;
+  })
+.sort((a, b) => {
+  const getFullDateTime = (appointment) => {
+    const [datePart, timePart] = appointment.appointmentDate.split(" ");
+    const [from] = timePart.split("-");
+
+    return new Date(`${datePart} ${from}`);
+  };
+
+  const dateA = getFullDateTime(a);
+  const dateB = getFullDateTime(b);
+
+  return sortOrder === "latest"
+    ? dateB - dateA
+    : dateA - dateB;
+})
+  .map((appointment, index) => {
+
+  const isPast =
+    new Date(appointment.appointmentDate.split(" ")[0]) < new Date();
+
+  return (
+  <div
+  key={index}
+  className="flex justify-between items-center p-4 border rounded-lg shadow-sm min-h-[80px] bg-white hover:shadow-md transition"
+>
+      <div>
+        <p className="font-semibold text-gray-900">
+          {
+            doctorNames[
+              doctors.find(d => d.id === appointment.doctorId)?.accountAddress
+            ] || `Doctor #${appointment.doctorId}`
+          }
+        </p>
+
+        <p className="text-sm text-gray-600">
+          {appointment.appointmentDate}
+        </p>
+      </div>
+
+      {/* STATUS */}
+  {/* STATUS */}
+<div
+  className={`flex items-center gap-1 text-xs px-3 py-1 rounded-full font-semibold ${
+    appointment.isOpen
+      ? "bg-green-100 text-green-700"
+      : isPast
+      ? "bg-yellow-100 text-yellow-700"
+      : "bg-red-100 text-red-700"
+  }`}
+>
+  {appointment.isOpen ? (
+    <>
+      <span>🟢</span> Active
+    </>
+  ) : isPast ? (
+    <>
+      <span>🟡</span> Past
+    </>
+  ) : (
+    <>
+      <span></span> Cancelled
+    </>
+  )}
+</div>
+    </div>
+  );
+})}
+      </div>
+
     </div>
   </div>
 )}
