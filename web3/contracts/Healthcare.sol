@@ -395,7 +395,6 @@ function REVOKE_ACCESS(uint _patientId, address _doctor) public {
             for (uint i = 1; i <= appointmentCount; i++) {
     if (
         appointments[i].doctorId == _doctorId &&
-appointments[i].isOpen == true &&
         keccak256(bytes(appointments[i].appointmentDate)) == keccak256(bytes(_appointmentDate)) &&
         keccak256(bytes(appointments[i].from)) == keccak256(bytes(_from)) &&
         keccak256(bytes(appointments[i].to)) == keccak256(bytes(_to))
@@ -423,43 +422,6 @@ appointments[i].isOpen == true &&
 
             emit APPOINTMENT_BOOKED(appointmentCount, _patientId, _doctorId, block.timestamp);
     }
-
-    function CANCEL_APPOINTMENT(uint _appointmentId) public {
-    require(_appointmentId <= appointmentCount, "Appointment does not exist");
-
-    Appointment storage appt = appointments[_appointmentId];
-
-    // Only patient who booked can cancel
-    require(
-        patients[appt.patientId].accountAddress == msg.sender,
-        "Only patient can cancel this appointment"
-    );
-
-    // Check if already closed
-    require(appt.isOpen == true, "Appointment already closed");
-
-    // Cancel appointment
-    appt.isOpen = false;
-
-    // Notifications
-    ADD_NOTIFICATION(
-        msg.sender,
-        "You have cancelled your appointment",
-        "Appointment"
-    );
-
-    ADD_NOTIFICATION(
-        doctors[appt.doctorId].accountAddress,
-        "Appointment cancelled by patient",
-        "Appointment"
-    );
-
-    ADD_NOTIFICATION(
-        admin,
-        "Appointment cancelled",
-        "Appointment"
-    );
-}
 
     function BUY_MEDICINE(uint _patientId, uint _medicineId, uint _quantity) public payable {
         require(_patientId <= patientCount, "Patient does not exist");
