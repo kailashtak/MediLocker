@@ -226,7 +226,9 @@ if (!/^[A-Za-z\s]{3,}$/.test(formData.name)) {
 
 // 🔹 Phone validation (Indian mobile)
 const indianMobileRegex = /^[6-9]\d{9}$/;
-if (formData.phone && !indianMobileRegex.test(formData.phone)) {
+// if (formData.phone && !indianMobileRegex.test(formData.phone))
+  if (!indianMobileRegex.test(formData.phone))
+   {
   toast.error("Enter valid 10-digit Indian mobile number");
   return;
 }
@@ -261,6 +263,21 @@ if (formData.licenseNumber.length < 5) {
 // 🔹 Qualification validation (min 3 chars)
 if (formData.qualification.length < 3) {
   toast.error("Enter valid medical qualification");
+  return;
+}
+
+if (!formData.phone) {
+  toast.error("Phone number is required");
+  return;
+}
+
+if (!profileImage) {
+  toast.error("Profile photo is required");
+  return;
+}
+
+if (certificateFiles.length === 0) {
+  toast.error("At least one certificate is required");
   return;
 }
 
@@ -565,7 +582,7 @@ if (formData.address && formData.address.length < 5) {
                 />
                 <p className="text-sm text-gray-600 mt-3 flex items-center justify-center gap-1">
                   <MdHealthAndSafety className="h-4 w-4" />
-                  Professional Photo recommended
+                  Professional Photo recommended *
                 </p>
               </div>
             </Card>
@@ -573,7 +590,7 @@ if (formData.address && formData.address.length < 5) {
             <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 border-2 border-teal-200">
               <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <FaNotesMedical className="h-6 w-6 text-teal-600" />
-                Medical Certificates
+                Medical Certificates *
               </h2>
               <div className="space-y-4">
                 <p className="text-gray-600 leading-relaxed">
@@ -638,6 +655,7 @@ if (formData.address && formData.address.length < 5) {
   inputMode="numeric"
   maxLength={10}
   value={formData.phone}
+  required
   onChange={(e) => {
     const value = e.target.value;
     if (/^\d*$/.test(value)) {
@@ -1025,8 +1043,11 @@ disabled={
   !formData.specialization ||
   !formData.qualification ||
   !formData.licenseNumber ||
+  !formData.phone ||
+  !profileImage ||
+  certificateFiles.length === 0 ||
   !/^[A-Za-z\s]{3,}$/.test(formData.name) ||
-  (formData.phone && !/^[6-9]\d{9}$/.test(formData.phone))
+  !/^[6-9]\d{9}$/.test(formData.phone)
 }
             className="px-12 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-lg hover:from-emerald-600 hover:to-teal-600 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl rounded-xl"
           >

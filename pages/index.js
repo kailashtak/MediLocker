@@ -483,13 +483,13 @@ const HomePage = () => {
               <div className="p-4 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-3xl w-fit mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                 <MdMonitorHeart className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                AI-Powered Health Analytics
+             <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Decentralized Patient Control
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Track your health journey with advanced analytics, AI-driven
-                insights, and personalized recommendations powered by blockchain
-                transparency.
+                Take full ownership of your healthcare data with decentralized access
+                controls, ensuring transparency, security, and complete patient autonomy
+                over medical information.
               </p>
               <div className="mt-4 flex justify-center space-x-2">
                 <FiTrendingUp className="h-5 w-5 text-teal-500" />
@@ -686,15 +686,24 @@ const HomePage = () => {
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
+              
+            
+
+
               <Button
+              variant="outline"
                 size="large"
                 onClick={() => router.push("/patient/register")}
-                className="bg-white text-emerald-600 hover:bg-emerald-50 px-12 py-6 text-xl font-bold shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 transition-all duration-300 rounded-2xl"
-              >
+               className="border-2 border-white text-white hover:bg-white hover:text-emerald-600 px-12 py-6 text-xl font-bold backdrop-blur-sm hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 rounded-2xl"
+               >
                 <FaHospitalUser className="mr-3 h-6 w-6" />
                 Join as Patient
                 <FiArrowRight className="ml-3 h-6 w-6" />
               </Button>
+
+
+
+
               <Button
                 variant="outline"
                 size="large"
@@ -821,7 +830,7 @@ const HomePage = () => {
               <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full w-fit mx-auto mb-4">
                 <MdHealthAndSafety className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">99.9%</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">99%</h3>
               <p className="text-gray-600 font-medium">Platform Uptime</p>
             </div>
 
@@ -829,7 +838,7 @@ const HomePage = () => {
               <div className="p-4 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-full w-fit mx-auto mb-4">
                 <FaThermometerHalf className="h-8 w-8 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">&lt;2s</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">&lt;5s</h3>
               <p className="text-gray-600 font-medium">Average Response Time</p>
             </div>
 

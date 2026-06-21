@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/router";
+import { usePublicClient } from "wagmi";
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../../config/contract";
 import {
   FiSend,
   FiUser,
@@ -60,6 +62,7 @@ const ContactCard = ({
 }) => {
   const [contactData, setContactData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const publicClient = usePublicClient();
 
   useEffect(() => {
     const fetchContactData = async () => {
@@ -138,10 +141,9 @@ const ContactCard = ({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-2">
+           {console.log("CONTACT NAME:", contact.name)}
             <h3 className="text-sm font-bold text-gray-900 truncate">
-              {contactData?.name ||
-                contact.name ||
-                `${contact.userType} #${contact.id}`}
+              {contact.name}
             </h3>
             <span className="text-xs text-gray-500 font-medium">
               {lastMessage?.timestamp
@@ -242,7 +244,9 @@ const NewChatModal = ({ isOpen, onClose, contacts, onStartChat, userType }) => {
         return (
           contact.name?.toLowerCase().includes(searchLower) ||
           contact.id.toString().includes(searchLower) ||
-          contact.accountAddress.toLowerCase().includes(searchLower)
+          (contact.accountAddress || "")
+  .toLowerCase()
+  .includes(searchLower)
         );
       });
       setFilteredContacts(filtered);
@@ -331,6 +335,7 @@ const NewChatModal = ({ isOpen, onClose, contacts, onStartChat, userType }) => {
                         )}
                       </div>
                       <div className="flex-1">
+                    
                         <p className="text-sm font-bold text-gray-900">
                           {contact.name || `${contact.userType} #${contact.id}`}
                         </p>
@@ -388,6 +393,7 @@ const HealthcareChat = () => {
   const messagesEndRef = useRef(null);
   const { address, isConnected } = useAccount();
   const router = useRouter();
+  const publicClient = usePublicClient();
 
   const {
     getFriendsList,
@@ -434,9 +440,21 @@ const HealthcareChat = () => {
         if (userInfo.userType === "doctor") {
           userId = await getDoctorId(address);
           userDetails = await getDoctorDetails(userId);
+
+          const userInfo = await getUserType(address);
+
+          userDetails = {
+            ...userDetails,
+            name: userInfo.name,
+          };
         } else if (userInfo.userType === "patient") {
           userId = await getPatientId(address);
           userDetails = await getPatientDetails(userId);
+
+            userDetails = {
+    ...userDetails,
+    name: userInfo.name,
+  };
         }
 
         setUserData(userDetails);
@@ -458,8 +476,35 @@ const HealthcareChat = () => {
           ),
         ];
 
-        setAllContacts(potentialContacts);
-        setContacts(friendsList || []);
+        const contactsWithNames = [];
+
+for (const contact of potentialContacts) {
+  const name = await getDoctorName(contact.accountAddress);
+
+  contactsWithNames.push({
+    ...contact,
+    name,
+  });
+}
+
+
+
+       setAllContacts(contactsWithNames); 
+       const friendsWithNames = [];
+
+for (const friend of (friendsList || [])) {
+  const friendAddress = friend.accountAddress || friend.pubkey;
+
+  const name = await getDoctorName(friendAddress);
+
+  friendsWithNames.push({
+    ...friend,
+    accountAddress: friendAddress,
+    name,
+  });
+}
+console.log("FRIENDS WITH NAMES:", friendsWithNames);
+setContacts(friendsWithNames);  
       } catch (error) {
         console.error("Error initializing chat:", error);
         toast.error("Failed to load chat data");
@@ -471,14 +516,38 @@ const HealthcareChat = () => {
     initializeChat();
   }, [isConnected, address]);
 
+
+const getDoctorName = async (address) => {
+  try {
+    const res = await publicClient.readContract({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: "GET_USERNAME_TYPE",
+      args: [address],
+    });
+
+   console.log("GET_USERNAME_TYPE Response:");
+console.log(JSON.stringify(res, null, 2));
+
+    console.log("NAME RETURNED:", res);
+return res.name || res.username;
+  } catch (err) {
+    console.log(err);
+    return "Unknown User";
+  }
+};
+
   const loadMessages = async (contact) => {
     try {
       const chatMessages = await getChatMessages(
-        contact.accountAddress,
+        contact.accountAddress || contact.pubkey,
         address
       );
 
-      console.log(chatMessages);
+      console.log("Loading messages for:");
+console.log(contact);
+console.log("Messages:");
+console.log(chatMessages);
 
       // Format messages for display
       const formattedMessages = chatMessages.map((msg) => ({
@@ -497,6 +566,7 @@ const HealthcareChat = () => {
   };
 
   const handleContactSelect = async (contact) => {
+    console.log("Selected Contact:", contact);
     setSelectedContact(contact);
     await loadMessages(contact);
   };
@@ -539,7 +609,7 @@ const HealthcareChat = () => {
     // Add to friends list locally and start chat
     setContacts((prev) => {
       const exists = prev.some(
-        (c) => c.accountAddress === contact.accountAddress
+        (c) => c.accountAddress === contact.accountAddress || contact.pubkey
       );
       if (!exists) {
         return [...prev, contact];
@@ -554,7 +624,22 @@ const HealthcareChat = () => {
     try {
       setRefreshing(true);
       const friendsList = await getFriendsList(address);
-      setContacts(friendsList || []);
+      console.log("RAW FRIENDS LIST:", friendsList);
+    const friendsWithNames = [];
+
+for (const friend of (friendsList || [])) {
+const friendAddress = friend.accountAddress || friend.pubkey;
+
+const name = await getDoctorName(friendAddress);
+
+friendsWithNames.push({
+  ...friend,
+  accountAddress: friendAddress,
+  name,
+});
+}
+console.log("FRIENDS WITH NAMES:", friendsWithNames);
+setContacts(friendsWithNames);
 
       if (selectedContact) {
         await loadMessages(selectedContact);
@@ -574,7 +659,9 @@ const HealthcareChat = () => {
     return (
       contact.name?.toLowerCase().includes(searchLower) ||
       contact.id?.toString().includes(searchLower) ||
-      contact.accountAddress.toLowerCase().includes(searchLower)
+      (contact.accountAddress || "")
+  .toLowerCase()
+  .includes(searchLower)
     );
   });
 
