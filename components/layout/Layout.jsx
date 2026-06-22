@@ -22,6 +22,7 @@ const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userType, setUserType] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const { address, isConnected } = useAccount();
   const { getUserType } = useHealthcareContract();
 
@@ -146,17 +147,23 @@ const Layout = ({ children }) => {
 
       {/* Enhanced Sidebar */}
       <div className="relative z-10">
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          userType={userType}
-        />
+<Sidebar
+  isOpen={sidebarOpen}
+  onClose={() => setSidebarOpen(false)}
+  userType={userType}
+  hasUnreadMessages={hasUnreadMessages}
+  setHasUnreadMessages={setHasUnreadMessages}
+/>
       </div>
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden relative z-10">
         {/* Enhanced Header */}
-        <Header onMenuClick={() => setSidebarOpen(true)} userType={userType} />
+        <Header
+  onMenuClick={() => setSidebarOpen(true)}
+  userType={userType}
+  setHasUnreadMessages={setHasUnreadMessages}
+/>
 
         {/* Main content with enhanced medical styling */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gradient-to-br from-emerald-50/30 via-white to-teal-50/30 relative">

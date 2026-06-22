@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
+import toast from "react-hot-toast";
 import {
   FiMenu,
   FiBell,
@@ -40,10 +41,16 @@ import { useHealthcareContract } from "../../hooks/useContract";
 import { formatTime } from "../../utils/helpers";
 import CustomConnectButton from "../layout/CustomConnectButton";
 
-const Header = ({ onMenuClick, userType }) => {
+const Header = ({
+  onMenuClick,
+  userType,
+  setHasUnreadMessages,
+}) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [notificationCount, setNotificationCount] = useState(null);
+  // const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const { address, isConnected } = useAccount();
   const { getNotifications } = useHealthcareContract();
@@ -52,8 +59,30 @@ const Header = ({ onMenuClick, userType }) => {
     const fetchNotifications = async () => {
       if (isConnected && address) {
         try {
-          const userNotifications = await getNotifications(address);
-          setNotifications(userNotifications.slice(-5)); // Get latest 5 notifications
+     const userNotifications = await getNotifications(address);
+
+
+
+if (
+  notificationCount !== null &&
+  userNotifications.length > notificationCount
+) {
+  const newestNotification =
+    userNotifications[userNotifications.length - 1];
+
+  if (newestNotification.categoryType === "Message") {
+    setHasUnreadMessages(true);
+
+    // toast.success("New message received", {
+   // duration: 15000,
+   // });
+
+    // 
+  }
+}
+
+setNotificationCount(userNotifications.length);
+setNotifications(userNotifications.slice(-20).reverse());
         } catch (error) {
           console.error("Error fetching notifications:", error);
         }
@@ -61,10 +90,10 @@ const Header = ({ onMenuClick, userType }) => {
     };
 
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // Refresh every 30 seconds
+    const interval = setInterval(fetchNotifications, 5000);// Refresh every 30 seconds
 
     return () => clearInterval(interval);
-  }, [isConnected, address, getNotifications]);
+  }, [isConnected, address, getNotifications, notificationCount]);
 
   useEffect(() => {
     const timer = setInterval(() => {

@@ -412,9 +412,9 @@ const HealthcareChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+ // useEffect(() => {
+   // scrollToBottom();
+  //}, [messages]);
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -564,6 +564,16 @@ console.log(chatMessages);
       toast.error("Failed to load messages");
     }
   };
+
+  useEffect(() => {
+  if (!selectedContact) return;
+
+  const interval = setInterval(() => {
+    loadMessages(selectedContact);
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [selectedContact]);
 
   const handleContactSelect = async (contact) => {
     console.log("Selected Contact:", contact);

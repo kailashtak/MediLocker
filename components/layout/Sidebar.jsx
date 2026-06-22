@@ -43,7 +43,13 @@ import {
   FaMicroscope,
 } from "react-icons/fa";
 
-const Sidebar = ({ isOpen, onClose, userType }) => {
+const Sidebar = ({
+  isOpen,
+  onClose,
+  userType,
+  hasUnreadMessages,
+  setHasUnreadMessages,
+}) => {
   const router = useRouter();
   const { isConnected } = useAccount();
 
@@ -229,10 +235,14 @@ const Sidebar = ({ isOpen, onClose, userType }) => {
   const currentRole = getUserRole();
   const menuItems = navigation[currentRole] || navigation.guest;
 
-  const handleNavigation = (href) => {
-    router.push(href);
-    onClose();
-  };
+const handleNavigation = (href) => {
+  if (href === "/chat") {
+    setHasUnreadMessages(false);
+  }
+
+  router.push(href);
+  onClose();
+};
 
   const isActivePath = (href) => {
     return router.pathname === href;
@@ -409,7 +419,13 @@ const Sidebar = ({ isOpen, onClose, userType }) => {
                   )}`}
                 />
               </div>
-              <span className="flex-1 text-left">{item.name}</span>
+              <div className="flex-1 flex items-center justify-between">
+  <span>{item.name}</span>
+
+  {item.name === "Messages" && hasUnreadMessages && (
+    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+  )}
+</div>
               {isActivePath(item.href) && (
                 <div className="w-2 h-2 bg-current rounded-full animate-pulse"></div>
               )}
