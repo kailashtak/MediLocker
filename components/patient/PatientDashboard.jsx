@@ -248,7 +248,8 @@ const addMedicalRecord = async () => {
     }
 
     if (!newRecord) {
-      alert("Please select a file");
+    
+      toast.error("Please select a file");
       return;
     }
 
@@ -283,7 +284,7 @@ const addMedicalRecord = async () => {
     });
 
     console.log("TX:", tx);
-    alert("Record uploaded successfully!");
+    toast.success("Record uploaded successfully");
     setNewRecord(null);
 
     window.location.reload();
@@ -302,10 +303,10 @@ const grantAccess = async (doctorAddress) => {
       args: [Number(patientData.id), doctorAddress],
     });
 
-    alert("Access granted!");
+    toast.success("Access granted");
   } catch (error) {
     console.error(error);
-    alert("Error granting access");
+    toast.error("Error granting access");
   }
 };
 
@@ -318,7 +319,7 @@ const revokeAccess = async (doctorAddress) => {
       args: [Number(patientData.id), doctorAddress],
     });
 
-    alert("Access revoked!");
+    toast.success("Access revoked");
   } catch (error) {
     console.error(error);
     alert("Error revoking access");

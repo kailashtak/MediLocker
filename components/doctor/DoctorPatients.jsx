@@ -857,13 +857,14 @@ const router = useRouter();
 
   const fetchPatientRecords = async (patientId) => {
   try {
+    console.log("Current wallet:", address);
     const records = await publicClient.readContract({
       address: CONTRACT_ADDRESS,
       abi: CONTRACT_ABI,
       functionName: "GET_PATIENT_RECORDS",
       args: [patientId],
     });
-
+console.log("Fetched records:", records);
     setPatientRecords(records || []);
   } catch (error) {
     console.error("Error fetching records:", error);
@@ -1248,11 +1249,14 @@ const handleViewRecords = async (patient) => {
         onClose={() => setShowProfileModal(false)}
       />
 {showRecordsModal && (
-  <Modal
-    isOpen={showRecordsModal}
-    onClose={() => setShowRecordsModal(false)}
-    title={`Medical Records - ${selectedPatientName}`}
-  >
+<Modal
+  isOpen={showRecordsModal}
+  onClose={() => {
+    setPatientRecords([]);
+    setShowRecordsModal(false);
+  }}
+  title={`Medical Records - ${selectedPatientName}`}
+>
     <div className="space-y-3 max-h-[500px] overflow-y-auto">
 
       <Input
