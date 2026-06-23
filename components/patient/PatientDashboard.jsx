@@ -634,7 +634,8 @@ const getAppointmentStatus = (appointment) => {
 
   {appointment.isOpen && (
   <div className="flex gap-2">
-    
+ 
+ {/*  
 <button
   onClick={async () => {
     try {
@@ -671,6 +672,8 @@ const getAppointmentStatus = (appointment) => {
 >
   Reschedule
 </button>
+
+*/}
 
     <button
       onClick={() => {
