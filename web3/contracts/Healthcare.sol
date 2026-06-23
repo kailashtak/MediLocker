@@ -393,12 +393,13 @@ function REVOKE_ACCESS(uint _patientId, address _doctor) public {
             uint doctorShare = msg.value - adminShare;
 
             for (uint i = 1; i <= appointmentCount; i++) {
-    if (
-        appointments[i].doctorId == _doctorId &&
-        keccak256(bytes(appointments[i].appointmentDate)) == keccak256(bytes(_appointmentDate)) &&
-        keccak256(bytes(appointments[i].from)) == keccak256(bytes(_from)) &&
-        keccak256(bytes(appointments[i].to)) == keccak256(bytes(_to))
-    ) {
+if (
+    appointments[i].doctorId == _doctorId &&
+    appointments[i].isOpen == true &&
+    keccak256(bytes(appointments[i].appointmentDate)) == keccak256(bytes(_appointmentDate)) &&
+    keccak256(bytes(appointments[i].from)) == keccak256(bytes(_from)) &&
+    keccak256(bytes(appointments[i].to)) == keccak256(bytes(_to))
+) {
         revert("Slot already booked");
     }
 }
@@ -422,6 +423,18 @@ function REVOKE_ACCESS(uint _patientId, address _doctor) public {
 
             emit APPOINTMENT_BOOKED(appointmentCount, _patientId, _doctorId, block.timestamp);
     }
+
+    function CANCEL_APPOINTMENT(uint _appointmentId) public {
+    Appointment storage appt = appointments[_appointmentId];
+
+    require(
+        patients[appt.patientId].accountAddress == msg.sender
+    );
+
+    require(appt.isOpen);
+
+    appt.isOpen = false;
+}
 
     function BUY_MEDICINE(uint _patientId, uint _medicineId, uint _quantity) public payable {
         require(_patientId <= patientCount, "Patient does not exist");
@@ -803,11 +816,23 @@ function GET_PATIENT_MEDICIAL_HISTORY(uint _patientId) public view returns (stri
         message memory newMsg = message(_myAddress, block.timestamp, _msg);
         allMessages[chatCode].push(newMsg);
 
-        ADD_NOTIFICATION(_myAddress, "You have successfully send message", "Message");
+        //ADD_NOTIFICATION(_myAddress, "You have successfully send message", "Message");
 
-        ADD_NOTIFICATION(friend_key, "You have new message", "Message");
+  //      ADD_NOTIFICATION(friend_key, "You have new message", "Message");
 
-        ADD_NOTIFICATION(admin, "message send successfully", "Message");
+ADD_NOTIFICATION(
+    friend_key,
+    string(
+        abi.encodePacked(
+            userList[_myAddress].name,
+            " sent you a message"
+        )
+    ),
+    "Message"
+);
+
+
+        //ADD_NOTIFICATION(admin, "message send successfully", "Message");
     }
 
     //READ MESSAGE
