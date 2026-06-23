@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, usePublicClient } from "wagmi";
 import { useRouter } from "next/router";
+import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../../config/contract";
 import {
   FiUsers,
   FiSearch,
@@ -74,7 +75,7 @@ import toast from "react-hot-toast";
 const PatientCard = ({
   patient,
   onViewProfile,
-  onViewHistory,
+  onViewRecords,
   onAddRecord,
   appointments = [],
 }) => {
@@ -301,15 +302,14 @@ const PatientCard = ({
               <FiEye className="h-4 w-4 mr-2" />
               View Profile
             </Button>
-            <Button
-              variant="outline"
-              size="small"
-              onClick={() => onViewHistory(patient)}
-              className="border-2 border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-medium"
-            >
-              <FaNotesMedical className="h-4 w-4 mr-2" />
-              History
-            </Button>
+         <Button
+          variant="outline"
+          size="small"
+          onClick={() => onViewRecords(patient)}
+        >
+          <FiFileText className="h-4 w-4 mr-2" />
+          View Records
+        </Button>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -339,7 +339,7 @@ const PatientProfileModal = ({ patient, isOpen, onClose }) => {
   const [patientData, setPatientData] = useState(null);
   const [medicalHistory, setMedicalHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  
   const { getPatientMedicalHistory } = useHealthcareContract();
 
   useEffect(() => {
@@ -706,9 +706,14 @@ const DoctorPatients = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showAddRecordModal, setShowAddRecordModal] = useState(false);
+  const [showRecordsModal, setShowRecordsModal] = useState(false);
+const [patientRecords, setPatientRecords] = useState([]);
+const [selectedPatientName, setSelectedPatientName] = useState("");
+const [recordSearch, setRecordSearch] = useState("");
 
-  const { address, isConnected } = useAccount();
-  const router = useRouter();
+const { address, isConnected } = useAccount();
+const publicClient = usePublicClient();
+const router = useRouter();
   const {
     getDoctorId,
     getDoctorDetails,
@@ -849,15 +854,44 @@ const DoctorPatients = () => {
     setFilteredPatients(filtered);
   }, [patients, appointments, searchTerm, filterStatus, sortBy]);
 
+
+  const fetchPatientRecords = async (patientId) => {
+  try {
+    const records = await publicClient.readContract({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: "GET_PATIENT_RECORDS",
+      args: [patientId],
+    });
+
+    setPatientRecords(records || []);
+  } catch (error) {
+    console.error("Error fetching records:", error);
+    toast.error("Access denied or no records found");
+  }
+};
+
   const handleViewProfile = (patient) => {
     setSelectedPatient(patient);
     setShowProfileModal(true);
   };
 
-  const handleViewHistory = (patient) => {
-    // Navigate to patient history page or show history modal
-    router.push(`/doctor/patients/${patient.id}/history`);
-  };
+const handleViewRecords = async (patient) => {
+  setSelectedPatient(patient);
+
+  const hash = patient.IPFS_URL.replace(
+    "https://gateway.pinata.cloud/ipfs/",
+    ""
+  );
+
+  const data = await ipfsService.fetchFromIPFS(hash);
+
+  setSelectedPatientName(data.name || `Patient #${patient.id}`);
+
+  await fetchPatientRecords(patient.id);
+
+  setShowRecordsModal(true);
+};
 
   const handleAddRecord = (patient) => {
     setSelectedPatient(patient);
@@ -1149,7 +1183,7 @@ const DoctorPatients = () => {
               patient={patient}
               appointments={appointments}
               onViewProfile={handleViewProfile}
-              onViewHistory={handleViewHistory}
+              onViewRecords={handleViewRecords}
               onAddRecord={handleAddRecord}
             />
           ))}
@@ -1213,6 +1247,69 @@ const DoctorPatients = () => {
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
       />
+{showRecordsModal && (
+  <Modal
+    isOpen={showRecordsModal}
+    onClose={() => setShowRecordsModal(false)}
+    title={`Medical Records - ${selectedPatientName}`}
+  >
+    <div className="space-y-3 max-h-[500px] overflow-y-auto">
+
+      <Input
+  placeholder="Search records..."
+  value={recordSearch}
+  onChange={(e) => setRecordSearch(e.target.value)}
+  className="mb-4"
+/>
+
+      {patientRecords.length === 0 ? (
+        <p className="text-gray-500">
+          No records found
+        </p>
+      ) : (
+     patientRecords
+  .filter(
+    (record) =>
+      record.fileName
+        .toLowerCase()
+        .includes(recordSearch.toLowerCase()) ||
+      record.fileType
+        .toLowerCase()
+        .includes(recordSearch.toLowerCase())
+  )
+  .map((record, index) => (
+          <div
+            key={index}
+            className="border rounded-lg p-3 flex justify-between items-center"
+          >
+            <div>
+              <p className="font-semibold">
+                {record.fileName}
+              </p>
+
+              <p className="text-sm text-gray-500">
+                {record.fileType}
+              </p>
+              <p className="text-xs text-gray-400">
+  {new Date(Number(record.timestamp) * 1000).toLocaleDateString()}
+</p>
+            </div>
+
+            <a
+              href={`https://gateway.pinata.cloud/ipfs/${record.fileHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-2 bg-blue-500 text-white rounded"
+            >
+              View
+            </a>
+          </div>
+        ))
+      )}
+
+    </div>
+  </Modal>
+)}
 
       <AddMedicalRecordModal
         patient={selectedPatient}
