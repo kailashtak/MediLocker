@@ -341,6 +341,31 @@ const DoctorDetailsModal = ({
                     </div>
                   </div>
                 </Card>
+<Card className="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 shadow-xl">
+  <div className="p-6">
+    <h4 className="text-xl font-bold text-gray-900 mb-4">
+      Medical Certificate
+    </h4>
+
+    {doctorData?.certificates?.length > 0 ? (
+      <Button
+        onClick={() =>
+          window.open(
+            `https://gateway.pinata.cloud/ipfs/${doctorData.certificates[0]}`,
+            "_blank"
+          )
+        }
+        className="w-full"
+      >
+        View Certificate
+      </Button>
+    ) : (
+      <p className="text-gray-500">
+        No certificate uploaded
+      </p>
+    )}
+  </div>
+</Card>
 
                 {doctorData?.qualifications &&
                   doctorData.qualifications.length > 0 && (
@@ -411,6 +436,7 @@ const DoctorDetailsModal = ({
             </Button>
             {!isApproved && (
               <>
+              {/*
                 <Button
                   onClick={() => onReject(doctor.id)}
                   loading={loading}
@@ -420,6 +446,9 @@ const DoctorDetailsModal = ({
                   <FiX className="h-4 w-4 mr-2" />
                   Reject
                 </Button>
+                
+                */}
+
                 <Button
                   onClick={() => onApprove(doctor.id)}
                   loading={loading}
