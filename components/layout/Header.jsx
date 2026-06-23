@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
+import { useRouter } from "next/router";
 import toast from "react-hot-toast";
+import { useDisconnect } from "wagmi";
 import {
   FiMenu,
   FiBell,
@@ -53,7 +55,9 @@ const Header = ({
   // const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const { address, isConnected } = useAccount();
+  const router = useRouter();
   const { getNotifications } = useHealthcareContract();
+  const { disconnect } = useDisconnect();
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -372,25 +376,48 @@ setNotifications(userNotifications.slice(-20).reverse());
                       </div>
                     </div>
                     <div className="py-2">
-                      <button className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gradient-to-r hover:from-emerald-25 hover:to-teal-25 flex items-center space-x-3 transition-all duration-200">
-                        <div className="p-2 bg-emerald-100 rounded-lg">
-                          <FiUser className="w-4 h-4 text-emerald-600" />
-                        </div>
-                        <span>Medical Profile</span>
-                      </button>
-                      <button className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gradient-to-r hover:from-teal-25 hover:to-cyan-25 flex items-center space-x-3 transition-all duration-200">
-                        <div className="p-2 bg-teal-100 rounded-lg">
-                          <FiSettings className="w-4 h-4 text-teal-600" />
-                        </div>
-                        <span>Healthcare Settings</span>
-                      </button>
+              <button
+  onClick={() => {
+    setShowProfile(false);
+
+    if (userType?.userType === "doctor") {
+      router.push("/doctor/profile")
+    } else if (userType?.userType === "patient") {
+      router.push("/patient/profile");
+    } else if (userType?.userType === "admin") {
+      router.push("/admin/profile");
+    }
+  }}
+  className="w-full px-4 py-3 text-left text-sm font-medium text-gray-700 hover:bg-gradient-to-r hover:from-emerald-25 hover:to-teal-25 flex items-center space-x-3 transition-all duration-200"
+>
+  <div className="p-2 bg-emerald-100 rounded-lg">
+    <FiUser className="w-4 h-4 text-emerald-600" />
+  </div>
+  <span>Profile</span>
+</button>
+
+
+               
+
+
                       <div className="border-t border-emerald-100 mt-2 pt-2">
-                        <button className="w-full px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-gradient-to-r hover:from-red-25 hover:to-pink-25 flex items-center space-x-3 transition-all duration-200">
-                          <div className="p-2 bg-red-100 rounded-lg">
-                            <FiLogOut className="w-4 h-4 text-red-600" />
-                          </div>
-                          <span>Sign out</span>
-                        </button>
+                       <button
+  onClick={() => {
+    disconnect();
+
+    setShowProfile(false);
+
+    toast.success("Signed out successfully");
+
+    router.push("/");
+  }}
+  className="w-full px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-gradient-to-r hover:from-red-25 hover:to-pink-25 flex items-center space-x-3 transition-all duration-200"
+>
+  <div className="p-2 bg-red-100 rounded-lg">
+    <FiLogOut className="w-4 h-4 text-red-600" />
+  </div>
+  <span>Sign out</span>
+</button>
                       </div>
                     </div>
                   </div>

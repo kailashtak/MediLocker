@@ -53,10 +53,13 @@ const Sidebar = ({
   const router = useRouter();
   const { isConnected } = useAccount();
 
-  const getUserRole = () => {
-    if (!userType) return "guest";
-    return userType.userType?.toLowerCase() || "guest";
-  };
+const getUserRole = () => {
+  if (!isConnected) return "guest";
+
+  if (!userType) return "guest";
+
+  return userType.userType?.toLowerCase() || "guest";
+};
 
   const navigation = {
     guest: [

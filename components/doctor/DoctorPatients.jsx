@@ -77,6 +77,7 @@ const PatientCard = ({
   onViewProfile,
   onViewRecords,
   onAddRecord,
+    onMessage,
   appointments = [],
 }) => {
   const [patientData, setPatientData] = useState(null);
@@ -321,13 +322,14 @@ const PatientCard = ({
               <FiEdit3 className="h-4 w-4 mr-2" />
               Add Record
             </Button>
-            <Button
-              size="small"
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
-            >
-              <FiMessageSquare className="h-4 w-4 mr-2" />
-              Message
-            </Button>
+           <Button
+            size="small"
+            onClick={() => onMessage(patient)}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium"
+          >
+            <FiMessageSquare className="h-4 w-4 mr-2" />
+            Message
+          </Button>
           </div>
         </div>
       </div>
@@ -855,20 +857,40 @@ const router = useRouter();
   }, [patients, appointments, searchTerm, filterStatus, sortBy]);
 
 
-  const fetchPatientRecords = async (patientId) => {
+const fetchPatientRecords = async (patientId) => {
   try {
     console.log("Current wallet:", address);
+
     const records = await publicClient.readContract({
       address: CONTRACT_ADDRESS,
       abi: CONTRACT_ABI,
       functionName: "GET_PATIENT_RECORDS",
       args: [patientId],
+      account: address,
     });
-console.log("Fetched records:", records);
+
+    console.log("Fetched records:", records);
+
     setPatientRecords(records || []);
+
+    return true; // ✅ ADD THIS
+
   } catch (error) {
     console.error("Error fetching records:", error);
-    toast.error("Access denied or no records found");
+    toast.error("Access denied. Patient has revoked your permission.", {
+  duration: 4000,
+  style: {
+    fontSize: "18px",
+    padding: "16px 20px",
+    minWidth: "420px",
+    borderRadius: "12px",
+    background: "#EA580C",
+color: "#FFFFFF",
+border: "2px solid #FCA5A5"
+  },
+});
+
+    return false; // ✅ ADD THIS
   }
 };
 
@@ -876,6 +898,10 @@ console.log("Fetched records:", records);
     setSelectedPatient(patient);
     setShowProfileModal(true);
   };
+
+  const handleMessage = (patient) => {
+  router.push("/chat");
+};
 
 const handleViewRecords = async (patient) => {
   setSelectedPatient(patient);
@@ -889,9 +915,11 @@ const handleViewRecords = async (patient) => {
 
   setSelectedPatientName(data.name || `Patient #${patient.id}`);
 
-  await fetchPatientRecords(patient.id);
+  const success = await fetchPatientRecords(patient.id);
 
+if (success) {
   setShowRecordsModal(true);
+}
 };
 
   const handleAddRecord = (patient) => {
@@ -1179,14 +1207,15 @@ const handleViewRecords = async (patient) => {
       {filteredPatients.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8 mb-8">
           {filteredPatients.map((patient) => (
-            <PatientCard
-              key={patient.id}
-              patient={patient}
-              appointments={appointments}
-              onViewProfile={handleViewProfile}
-              onViewRecords={handleViewRecords}
-              onAddRecord={handleAddRecord}
-            />
+         <PatientCard
+            key={patient.id}
+            patient={patient}
+            appointments={appointments}
+            onViewProfile={handleViewProfile}
+            onViewRecords={handleViewRecords}
+            onAddRecord={handleAddRecord}
+            onMessage={handleMessage}
+          />
           ))}
         </div>
       ) : (
