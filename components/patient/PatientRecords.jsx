@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useWriteContract, usePublicClient } from "wagmi";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "../../config/contract";
+import { useAccount } from "wagmi";
 
 const PatientRecords = () => {
   const [files, setFiles] = useState([]);
@@ -20,8 +21,13 @@ const PatientRecords = () => {
 
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
+  const { address } = useAccount();
+  console.log("Current Wallet:", address);
+  
 
-  const PATIENT_ID = 1; // 🔥 FIXED HERE
+  //const PATIENT_ID = 1; // 🔥 FIXED HERE
+const [patientId, setPatientId] = useState(null);
+
 
   // ================= TOAST =================
   const showToast = (msg, type = "success") => {
@@ -60,7 +66,7 @@ const PatientRecords = () => {
           address: CONTRACT_ADDRESS,
           abi: CONTRACT_ABI,
           functionName: "ADD_MEDICAL_RECORD",
-          args: [PATIENT_ID, data.IpfsHash, file.name, file.type],
+          args: [patientId, data.IpfsHash, file.name, file.type],
         });
       }
 
@@ -75,17 +81,18 @@ const PatientRecords = () => {
   };
 
   // ================= FETCH =================
-  const fetchRecords = async () => {
-    const data = await publicClient.readContract({
-      address: CONTRACT_ADDRESS,
-      abi: CONTRACT_ABI,
-      functionName: "GET_PATIENT_RECORDS",
-      args: [PATIENT_ID],
-    });
+const fetchRecords = async () => {
+  const data = await publicClient.readContract({
+    address: CONTRACT_ADDRESS,
+    abi: CONTRACT_ABI,
+    functionName: "GET_PATIENT_RECORDS",
+    args: [patientId],
+    account: address,
+  });
 
-    setRecords(data);
-    setFilteredRecords(data);
-  };
+  setRecords(data);
+  setFilteredRecords(data);
+};
 
   const fetchDoctors = async () => {
     const data = await publicClient.readContract({
@@ -98,6 +105,22 @@ const PatientRecords = () => {
     setFilteredDoctors(data);
     fetchDoctorNames(data);
   };
+
+  const fetchPatientId = async () => {
+  try {
+    const id = await publicClient.readContract({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: "GET_PATIENT_ID",
+      args: [address],
+    });
+
+    console.log("Patient ID:", id.toString());
+    setPatientId(Number(id));
+  } catch (err) {
+    console.error("Patient not registered:", err);
+  }
+};
 
   const fetchDoctorNames = async (docs) => {
     const names = {};
@@ -140,7 +163,7 @@ const PatientRecords = () => {
       address: CONTRACT_ADDRESS,
       abi: CONTRACT_ABI,
       functionName: "GRANT_ACCESS",
-      args: [PATIENT_ID, address], // ✅ FIX
+      args: [patientId, address], // ✅ FIX
     });
 
     showToast("Access granted ✅");
@@ -151,16 +174,26 @@ const PatientRecords = () => {
       address: CONTRACT_ADDRESS,
       abi: CONTRACT_ABI,
       functionName: "REVOKE_ACCESS",
-      args: [PATIENT_ID, address], // ✅ FIX
+      args: [patientId, address], // ✅ FIX
     });
 
     showToast("Access revoked ❌", "error");
   };
 
-  useEffect(() => {
-    fetchRecords();
+useEffect(() => {
+  if (address) {
+    console.log("Current Wallet:", address);
+    fetchPatientId();
     fetchDoctors();
-  }, []);
+  }
+}, [address]);
+
+useEffect(() => {
+  if (patientId) {
+    console.log("Fetching records for patient:", patientId);
+    fetchRecords();
+  }
+}, [patientId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 p-6">
